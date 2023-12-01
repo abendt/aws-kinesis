@@ -9,7 +9,6 @@ import software.amazon.awssdk.services.kinesis.KinesisAsyncClient
 import software.amazon.kinesis.common.ConfigsBuilder
 import software.amazon.kinesis.common.InitialPositionInStream
 import software.amazon.kinesis.common.InitialPositionInStreamExtended
-import software.amazon.kinesis.coordinator.NoOpWorkerStateChangeListener
 import software.amazon.kinesis.coordinator.Scheduler
 import software.amazon.kinesis.coordinator.WorkerStateChangeListener
 import software.amazon.kinesis.lifecycle.events.InitializationInput
@@ -24,12 +23,18 @@ import software.amazon.kinesis.retrieval.polling.PollingConfig
 
 typealias KinesisCallback = (String) -> Unit
 
+interface WorkerListener {
+    fun workerStarted()
+
+    fun processorInitialized()
+}
+
 class KinesisConsumer(
     val streamName: String,
     val kinesisClient: KinesisAsyncClient,
     val dynamoDbClient: DynamoDbAsyncClient,
     val cloudWatchClient: CloudWatchAsyncClient,
-    val workerListener: WorkerStateChangeListener = NoOpWorkerStateChangeListener(),
+    val workerListener: WorkerListener,
     val callback: KinesisCallback,
 ) {
     val logger = KotlinLogging.logger {}
@@ -48,10 +53,9 @@ class KinesisConsumer(
                 dynamoDbClient,
                 cloudWatchClient,
                 workerIdentifier,
-                MyShardRecordProcessorFactory(callback),
+                MyShardRecordProcessorFactory(workerListener, callback),
             )
 
-        // This will prohably only work with one worker ...
         var workerState: WorkerStateChangeListener.WorkerState? = null
         val delegatingListener =
             WorkerStateChangeListener {
@@ -63,7 +67,7 @@ class KinesisConsumer(
 
                 workerState = it
 
-                workerListener.onWorkerStateChange(it)
+                workerListener.workerStarted()
             }
 
         scheduler =
@@ -101,21 +105,23 @@ class KinesisConsumer(
     }
 }
 
-class MyShardRecordProcessorFactory(val callback: KinesisCallback) : ShardRecordProcessorFactory {
+class MyShardRecordProcessorFactory(val workerListener: WorkerListener, val callback: KinesisCallback) : ShardRecordProcessorFactory {
     val logger = KotlinLogging.logger {}
 
     override fun shardRecordProcessor(): ShardRecordProcessor {
         logger.info { "create record processor" }
 
-        return MyShardProcessor(callback)
+        return MyShardProcessor(workerListener, callback)
     }
 }
 
-class MyShardProcessor(val callback: KinesisCallback) : ShardRecordProcessor {
+class MyShardProcessor(val workerListener: WorkerListener, val callback: KinesisCallback) : ShardRecordProcessor {
     val logger = KotlinLogging.logger {}
 
     override fun initialize(initialization: InitializationInput) {
         logger.info { "initialize $initialization" }
+
+        workerListener.processorInitialized()
     }
 
     override fun processRecords(processRecords: ProcessRecordsInput) {
@@ -124,6 +130,8 @@ class MyShardProcessor(val callback: KinesisCallback) : ShardRecordProcessor {
         processRecords.records().asSequence().map {
             SdkBytes.fromByteBuffer(it.data()).asUtf8String()
         }.forEach(callback)
+
+        processRecords.checkpointer().checkpoint()
     }
 
     override fun leaseLost(leaseLost: LeaseLostInput) {
@@ -132,9 +140,11 @@ class MyShardProcessor(val callback: KinesisCallback) : ShardRecordProcessor {
 
     override fun shardEnded(shardEnded: ShardEndedInput) {
         logger.info { "shardEnded $shardEnded" }
+        shardEnded.checkpointer().checkpoint()
     }
 
     override fun shutdownRequested(shutdownRequested: ShutdownRequestedInput) {
         logger.info { "shutdownRequested $shutdownRequested" }
+        shutdownRequested.checkpointer().checkpoint()
     }
 }

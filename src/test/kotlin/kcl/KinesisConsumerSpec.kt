@@ -4,8 +4,12 @@ import io.kotest.assertions.nondeterministic.eventually
 import io.kotest.core.extensions.install
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.extensions.testcontainers.ContainerExtension
+import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.collections.shouldHaveSize
+import io.kotest.matchers.collections.shouldNotContain
+import io.kotest.matchers.ints.shouldBeGreaterThan
 import io.kotest.matchers.shouldBe
+import java.util.UUID
 import java.util.concurrent.CountDownLatch
 import kotlin.time.Duration.Companion.seconds
 import mu.KotlinLogging
@@ -20,10 +24,10 @@ import software.amazon.awssdk.services.cloudwatch.CloudWatchAsyncClient
 import software.amazon.awssdk.services.dynamodb.DynamoDbAsyncClient
 import software.amazon.awssdk.services.kinesis.KinesisAsyncClient
 import software.amazon.awssdk.services.kinesis.model.CreateStreamRequest
+import software.amazon.awssdk.services.kinesis.model.DeleteStreamRequest
 import software.amazon.awssdk.services.kinesis.model.DescribeStreamRequest
 import software.amazon.awssdk.services.kinesis.model.PutRecordRequest
 import software.amazon.awssdk.services.kinesis.model.StreamStatus
-import software.amazon.kinesis.coordinator.WorkerStateChangeListener
 
 class KinesisConsumerSpec : StringSpec() {
     val logger = KotlinLogging.logger {}
@@ -49,44 +53,114 @@ class KinesisConsumerSpec : StringSpec() {
 
     init {
         "can consume kinesis events" {
-            givenStreamWithName("my-stream")
+            withKinesisStream {
+                sendEvent("First")
+                withConsumer {
+                    sendEvent("Second")
 
-            val received = mutableListOf<String>()
-            val consumerStarted = CountDownLatch(1)
-            val workerListener =
-                WorkerStateChangeListener {
-                    if (it == WorkerStateChangeListener.WorkerState.STARTED) {
-                        consumerStarted.countDown()
+                    eventually(60.seconds) {
+                        received shouldContain "First"
+                        received shouldContain "Second"
+                    }
+                }
+            }
+        }
+
+        "can consume from multiple shards" {
+            withKinesisStream(withShards = 2) {
+                withConsumer {
+                    sendEvent("Hello Kinesis!", "1")
+                    sendEvent("Hello Kinesis!", "2")
+                    sendEvent("Hello Kinesis!", "3")
+                    sendEvent("Hello Kinesis!", "4")
+
+                    eventually(60.seconds) {
+                        received shouldHaveSize 4
+                    }
+                }
+            }
+        }
+
+        "need to restart consumer after exception" {
+            withKinesisStream {
+                withConsumer(shouldFail = true) {
+                    sendEvent("Event")
+
+                    eventually(60.seconds) {
+                        invokeCount shouldBeGreaterThan 0
                     }
                 }
 
-            val consumer =
-                KinesisConsumer("my-stream", kinesisClient, dynamoClient, cloudWatchClient, workerListener) {
-                    received.add(it)
+                withConsumer {
+                    eventually(60.seconds) {
+                        received shouldHaveSize 1
+                    }
+                }
+            }
+        }
+
+        "event is not reconsumed after restart" {
+            withKinesisStream {
+                withConsumer {
+                    sendEvent("First")
+
+                    eventually(60.seconds) {
+                        received shouldContain "First"
+                    }
                 }
 
-            consumer.start()
+                sendEvent("Second")
 
-            consumerStarted.await()
+                withConsumer {
+                    eventually(60.seconds) {
+                        received shouldContain "Second"
+                    }
 
-            kinesisClient.putRecord(
-                PutRecordRequest.builder()
-                    .streamName("my-stream")
-                    .partitionKey("1")
-                    .data(SdkBytes.fromUtf8String("Hello Kinesis!")).build(),
-            ).get()
-
-            eventually(60.seconds) {
-                received shouldHaveSize 1
+                    received shouldNotContain "First"
+                }
             }
-
-            consumer.stop()
         }
     }
 
-    suspend fun givenStreamWithName(name: String) {
-        kinesisClient.createStream(CreateStreamRequest.builder().shardCount(1).streamName(name).build()).get()
-        logger.info { "created stream $name" }
+    private suspend fun withKinesisStream(
+        withShards: Int = 1,
+        block: suspend KinesisStreamContext.() -> Unit,
+    ) {
+        val name = UUID.randomUUID().toString()
+        createKinesisStream(name, withShards)
+
+        try {
+            block(
+                object : KinesisStreamContext {
+                    override val streamName: String
+                        get() = name
+                    override val shardCount: Int
+                        get() = withShards
+
+                    override fun sendEvent(
+                        payload: String,
+                        partitionKey: String,
+                    ) {
+                        kinesisClient.putRecord(
+                            PutRecordRequest.builder()
+                                .streamName(name)
+                                .partitionKey(partitionKey)
+                                .data(SdkBytes.fromUtf8String(payload)).build(),
+                        ).get()
+                    }
+                },
+            )
+        } finally {
+            kinesisClient.deleteStream(DeleteStreamRequest.builder().streamName(name).build()).get()
+        }
+    }
+
+    private suspend fun createKinesisStream(
+        name: String,
+        withShardCount: Int = 1,
+    ) {
+        logger.info { "creating stream $name" }
+        kinesisClient.createStream(CreateStreamRequest.builder().shardCount(withShardCount).streamName(name).build()).get()
 
         eventually(10.seconds) {
             val response = kinesisClient.describeStream(DescribeStreamRequest.builder().streamName(name).build()).get()
@@ -95,6 +169,70 @@ class KinesisConsumerSpec : StringSpec() {
 
             logger.info { "stream $name is available ${response.streamDescription().streamARN()}" }
         }
+    }
+
+    interface KinesisStreamContext {
+        val streamName: String
+        val shardCount: Int
+
+        fun sendEvent(
+            payload: String,
+            partitionKey: String = "partition-1",
+        )
+    }
+
+    interface ConsumeContext {
+        val invokeCount: Int
+        val received: List<String>
+    }
+
+    suspend fun KinesisStreamContext.withConsumer(
+        shouldFail: Boolean = false,
+        block: suspend ConsumeContext.() -> Unit,
+    ) {
+        val received = mutableListOf<String>()
+        val processorStarted = CountDownLatch(shardCount)
+
+        var counter = 0
+
+        val workerListener =
+            object : WorkerListener {
+                override fun workerStarted() {
+                }
+
+                override fun processorInitialized() {
+                    processorStarted.countDown()
+                }
+            }
+
+        val consumer =
+            KinesisConsumer(streamName, kinesisClient, dynamoClient, cloudWatchClient, workerListener) {
+                try {
+                    if (shouldFail) {
+                        throw RuntimeException("for test")
+                    }
+
+                    received.add(it)
+                } finally {
+                    counter += 1
+                }
+            }
+
+        consumer.start()
+
+        processorStarted.await()
+
+        val context =
+            object : ConsumeContext {
+                override val invokeCount: Int
+                    get() = counter
+                override val received: List<String>
+                    get() = received
+            }
+
+        block(context)
+
+        consumer.stop()
     }
 }
 
