@@ -9,6 +9,7 @@ import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.collections.shouldNotContain
 import io.kotest.matchers.ints.shouldBeGreaterThan
 import io.kotest.matchers.shouldBe
+import java.nio.ByteBuffer
 import java.util.UUID
 import java.util.concurrent.CountDownLatch
 import kotlin.time.Duration.Companion.seconds
@@ -59,8 +60,8 @@ class KinesisConsumerSpec : StringSpec() {
                     sendEvent("Second")
 
                     eventually(60.seconds) {
-                        received shouldContain "First"
-                        received shouldContain "Second"
+                        eventsReceived shouldContain "First"
+                        eventsReceived shouldContain "Second"
                     }
                 }
             }
@@ -75,7 +76,7 @@ class KinesisConsumerSpec : StringSpec() {
                     sendEvent("Hello Kinesis!", "4")
 
                     eventually(60.seconds) {
-                        received shouldHaveSize 4
+                        eventsReceived shouldHaveSize 4
                     }
                 }
             }
@@ -87,13 +88,13 @@ class KinesisConsumerSpec : StringSpec() {
                     sendEvent("Event")
 
                     eventually(60.seconds) {
-                        invokeCount shouldBeGreaterThan 0
+                        processorInvoked shouldBeGreaterThan 0
                     }
                 }
 
                 withConsumer {
                     eventually(60.seconds) {
-                        received shouldHaveSize 1
+                        eventsReceived shouldHaveSize 1
                     }
                 }
             }
@@ -105,7 +106,7 @@ class KinesisConsumerSpec : StringSpec() {
                     sendEvent("First")
 
                     eventually(60.seconds) {
-                        received shouldContain "First"
+                        eventsReceived shouldContain "First"
                     }
                 }
 
@@ -113,10 +114,10 @@ class KinesisConsumerSpec : StringSpec() {
 
                 withConsumer {
                     eventually(60.seconds) {
-                        received shouldContain "Second"
+                        eventsReceived shouldContain "Second"
                     }
 
-                    received shouldNotContain "First"
+                    eventsReceived shouldNotContain "First"
                 }
             }
         }
@@ -181,58 +182,63 @@ class KinesisConsumerSpec : StringSpec() {
         )
     }
 
-    interface ConsumeContext {
-        val invokeCount: Int
-        val received: List<String>
+    interface KinesisConsumerContext {
+        val processorInvoked: Int
+        val eventsReceived: List<String>
     }
 
     suspend fun KinesisStreamContext.withConsumer(
         shouldFail: Boolean = false,
-        block: suspend ConsumeContext.() -> Unit,
+        block: suspend KinesisConsumerContext.() -> Unit,
     ) {
-        val received = mutableListOf<String>()
-        val processorStarted = CountDownLatch(shardCount)
-
         var counter = 0
 
-        val workerListener =
-            object : WorkerListener {
-                override fun workerStarted() {
+        val events = mutableListOf<String>()
+        val processorReady = CountDownLatch(shardCount)
+
+        val config =
+            object : KinesisConsumerConfiguration<String> {
+                override fun processorInitialized() {
+                    processorReady.countDown()
                 }
 
-                override fun processorInitialized() {
-                    processorStarted.countDown()
+                override fun convertPayload(buffer: ByteBuffer): String {
+                    return SdkBytes.fromByteBuffer(buffer).asUtf8String()
+                }
+
+                override fun callback(payload: String) {
+                    try {
+                        if (shouldFail) {
+                            throw RuntimeException("for test")
+                        }
+
+                        events.add(payload)
+                    } finally {
+                        counter += 1
+                    }
                 }
             }
 
         val consumer =
-            KinesisConsumer(streamName, kinesisClient, dynamoClient, cloudWatchClient, workerListener) {
-                try {
-                    if (shouldFail) {
-                        throw RuntimeException("for test")
-                    }
-
-                    received.add(it)
-                } finally {
-                    counter += 1
-                }
-            }
+            KinesisConsumer(streamName, kinesisClient, dynamoClient, cloudWatchClient, config)
 
         consumer.start()
 
-        processorStarted.await()
+        try {
+            processorReady.await()
 
-        val context =
-            object : ConsumeContext {
-                override val invokeCount: Int
-                    get() = counter
-                override val received: List<String>
-                    get() = received
-            }
+            val context =
+                object : KinesisConsumerContext {
+                    override val processorInvoked: Int
+                        get() = counter
+                    override val eventsReceived: List<String>
+                        get() = events
+                }
 
-        block(context)
-
-        consumer.stop()
+            block(context)
+        } finally {
+            consumer.stop()
+        }
     }
 }
 
