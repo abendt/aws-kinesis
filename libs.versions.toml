@@ -1,0 +1,45 @@
+[versions]
+
+java = "21"
+kotlin = "1.9.21"
+
+slf4j = "2.0.9"
+logback = "1.4.13"
+
+junit = "5.10.1"
+kotest = "5.8.0"
+mockk = "1.13.8"
+
+ktlint = "0.50.0"
+
+gradleTestLoggerPlugin = "3.2.0"
+gradleSpotlessPlugin = "6.22.0"
+
+[libraries]
+
+# Logging
+kotlinLogging = "io.github.microutils:kotlin-logging-jvm:3.0.5"
+
+slf4j-api = { module = "org.slf4j:slf4j-api", version.ref = "slf4j" }
+slf4j-jul = { module = "org.slf4j:jul-to-slf4j", version.ref = "slf4j" }
+slf4j-jcl = { module = "org.slf4j:jcl-over-slf4j", version.ref = "slf4j" }
+
+logback-classic = { module = "ch.qos.logback:logback-classic", version.ref = "logback" }
+logback-core = { module = "ch.qos.logback:logback-core", version.ref = "logback" }
+
+# Testing
+junit-bom = { module = "org.junit:junit-bom", version.ref="junit" }
+
+kotest-runner = { module = "io.kotest:kotest-runner-junit5", version.ref = "kotest" }
+kotest-assertions = { module = "io.kotest:kotest-assertions-core", version.ref = "kotest" }
+kotest-datatest = { module = "io.kotest:kotest-framework-datatest", version.ref = "kotest" }
+kotest-property = { module = "io.kotest:kotest-property", version.ref = "kotest" }
+kotest-json = { module = "io.kotest:kotest-assertions-json", version.ref = "kotest"}
+
+mockk-core = { module = "io.mockk:mockk", version.ref = "mockk" }
+
+[bundles]
+
+kotest = ["kotest-runner", "kotest-assertions", "kotest-datatest", "kotest-json"]
+logback = ["logback-classic", "logback-core"]
+slf4j = ["slf4j-jul", "slf4j-jcl", "slf4j-api"]

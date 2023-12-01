@@ -1,0 +1,26 @@
+root = true
+
+[*]
+end_of_line = lf
+insert_final_newline = true
+charset = utf-8
+indent_style = space
+trim_trailing_whitespace = true
+
+[*.{kt,kts}]
+max_line_length=140
+
+[*.kt]
+ij_kotlin_name_count_to_use_star_import = 99
+ij_kotlin_name_count_to_use_star_import_for_members = 99
+
+ktlint_standard_import-ordering = disabled
+ktlint_standard_filename = disabled
+
+[*.kts]
+ktlint_gradle-kotlin-dsl_gradle-kotlin-dsl-blank-lines = disabled
+ktlint_gradle-kotlin-dsl_gradle-kotlin-dsl-imports = disabled
+ktlint_gradle-kotlin-dsl_visibility-modifiers-own-lin = disabled
+
+[*.bat]
+end_of_line = crlf

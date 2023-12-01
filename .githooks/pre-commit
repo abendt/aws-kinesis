@@ -1,0 +1,5 @@
+echo "running spotless in ."
+./gradlew --quiet spotlessApply
+cd buildSrc
+echo "running spotless in buildSrc"
+../gradlew --quiet spotlessApply
