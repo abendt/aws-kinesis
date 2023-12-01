@@ -1,4 +1,4 @@
-rootProject.name = "kotlin-single-blueprint"
+rootProject.name = "aws-kinesis"
 
 dependencyResolutionManagement {
     versionCatalogs {

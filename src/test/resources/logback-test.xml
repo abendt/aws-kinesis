@@ -3,14 +3,15 @@
     <statusListener class="ch.qos.logback.core.status.NopStatusListener" />
 
     <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
-        <!-- encoders are assigned the type
-             ch.qos.logback.classic.encoder.PatternLayoutEncoder by default -->
         <encoder>
-            <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
+            <pattern>%highlight(%.-1level) %date{HH:mm:ss.SSS} [%30.30logger] %msg%n%rEx{full, org.springframework,
+                sun.reflect, java.lang.reflect}
+            </pattern>
         </encoder>
     </appender>
 
-    <logger name="sample" level="DEBUG" />
+    <logger name="kcl" level="DEBUG" />
+    <logger name="software.amazon.kinesis" level="WARN" />
 
     <root level="WARN">
         <appender-ref ref="STDOUT"/>
