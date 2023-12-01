@@ -53,17 +53,8 @@ class KinesisConsumerSpec : StringSpec() {
 
             val received = mutableListOf<String>()
             val consumerStarted = CountDownLatch(1)
-            var workerState: WorkerStateChangeListener.WorkerState? = null
             val workerListener =
                 WorkerStateChangeListener {
-                    if (workerState == null) {
-                        logger.info { "worker state $it" }
-                    } else {
-                        logger.info { "worker state $workerState => $it" }
-                    }
-
-                    workerState = it
-
                     if (it == WorkerStateChangeListener.WorkerState.STARTED) {
                         consumerStarted.countDown()
                     }
@@ -108,15 +99,13 @@ class KinesisConsumerSpec : StringSpec() {
 }
 
 private fun <B : AwsClientBuilder<B, C>, C> AwsClientBuilder<B, C>.configureForLocalstack(localstack: LocalStackContainer) =
-    also {
-        it.endpointOverride(localstack.endpoint)
-            .credentialsProvider(
-                StaticCredentialsProvider.create(
-                    AwsBasicCredentials.create(
-                        localstack.accessKey,
-                        localstack.secretKey,
-                    ),
+    endpointOverride(localstack.endpoint)
+        .credentialsProvider(
+            StaticCredentialsProvider.create(
+                AwsBasicCredentials.create(
+                    localstack.accessKey,
+                    localstack.secretKey,
                 ),
-            )
-            .region(Region.of(localstack.region))
-    }
+            ),
+        )
+        .region(Region.of(localstack.region))

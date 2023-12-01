@@ -51,10 +51,25 @@ class KinesisConsumer(
                 MyShardRecordProcessorFactory(callback),
             )
 
+        // This will prohably only work with one worker ...
+        var workerState: WorkerStateChangeListener.WorkerState? = null
+        val delegatingListener =
+            WorkerStateChangeListener {
+                if (workerState == null) {
+                    logger.info { "worker state $it" }
+                } else {
+                    logger.info { "worker state $workerState => $it" }
+                }
+
+                workerState = it
+
+                workerListener.onWorkerStateChange(it)
+            }
+
         scheduler =
             Scheduler(
                 configsBuilder.checkpointConfig(),
-                configsBuilder.coordinatorConfig().workerStateChangeListener(workerListener),
+                configsBuilder.coordinatorConfig().workerStateChangeListener(delegatingListener),
                 configsBuilder.leaseManagementConfig(),
                 configsBuilder.lifecycleConfig(),
                 configsBuilder.metricsConfig(),
