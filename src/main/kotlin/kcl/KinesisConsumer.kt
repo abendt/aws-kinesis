@@ -133,7 +133,7 @@ class MyShardProcessor<T>(val config: KinesisConsumerConfiguration<T>) : ShardRe
             config.convertPayload(it.data())
         }.forEach { config.processPayload(it) }
 
-        lastSequenceNumber = processRecords.records().last.sequenceNumber()
+        lastSequenceNumber = processRecords.records().last().sequenceNumber()
         processRecords.checkpointer().checkpoint()
     }
 
