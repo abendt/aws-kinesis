@@ -220,7 +220,7 @@ class KinesisConsumerSpec : StringSpec() {
             }
 
         val consumer =
-            KinesisConsumer(streamName, kinesisClient, dynamoClient, cloudWatchClient, config)
+            KinesisConsumer("test-application", streamName, kinesisClient, dynamoClient, cloudWatchClient, config)
 
         consumer.start()
 

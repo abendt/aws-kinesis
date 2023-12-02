@@ -30,6 +30,7 @@ interface KinesisConsumerConfiguration<T> {
 }
 
 class KinesisConsumer<T>(
+    val applicationName: String,
     val streamName: String,
     val kinesisClient: KinesisAsyncClient,
     val dynamoDbClient: DynamoDbAsyncClient,
@@ -47,7 +48,7 @@ class KinesisConsumer<T>(
         val configsBuilder =
             ConfigsBuilder(
                 streamName,
-                streamName,
+                applicationName,
                 kinesisClient,
                 dynamoDbClient,
                 cloudWatchClient,
