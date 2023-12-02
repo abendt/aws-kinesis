@@ -26,7 +26,7 @@ interface KinesisConsumerConfiguration<T> {
 
     fun convertPayload(buffer: ByteBuffer): T
 
-    fun callback(payload: T)
+    fun processPayload(payload: T)
 }
 
 class KinesisConsumer<T>(
@@ -104,6 +104,7 @@ class KinesisConsumer<T>(
 
 class MyShardRecordProcessorFactory<T>(val config: KinesisConsumerConfiguration<T>) :
     ShardRecordProcessorFactory {
+
     val logger = KotlinLogging.logger {}
 
     override fun shardRecordProcessor(): ShardRecordProcessor {
@@ -114,7 +115,9 @@ class MyShardRecordProcessorFactory<T>(val config: KinesisConsumerConfiguration<
 }
 
 class MyShardProcessor<T>(val config: KinesisConsumerConfiguration<T>) : ShardRecordProcessor {
+
     val logger = KotlinLogging.logger {}
+    var lastSequenceNumber: String? = null
 
     override fun initialize(initialization: InitializationInput) {
         logger.info { "initialize $initialization" }
@@ -127,8 +130,9 @@ class MyShardProcessor<T>(val config: KinesisConsumerConfiguration<T>) : ShardRe
 
         processRecords.records().asSequence().map {
             config.convertPayload(it.data())
-        }.forEach { config.callback(it) }
+        }.forEach { config.processPayload(it) }
 
+        lastSequenceNumber = processRecords.records().last.sequenceNumber()
         processRecords.checkpointer().checkpoint()
     }
 
@@ -138,11 +142,17 @@ class MyShardProcessor<T>(val config: KinesisConsumerConfiguration<T>) : ShardRe
 
     override fun shardEnded(shardEnded: ShardEndedInput) {
         logger.info { "shardEnded $shardEnded" }
-        shardEnded.checkpointer().checkpoint()
+
+        lastSequenceNumber?.let {
+            shardEnded.checkpointer().checkpoint(it)
+        }
     }
 
     override fun shutdownRequested(shutdownRequested: ShutdownRequestedInput) {
         logger.info { "shutdownRequested $shutdownRequested" }
-        shutdownRequested.checkpointer().checkpoint()
+
+        lastSequenceNumber?.let {
+            shutdownRequested.checkpointer().checkpoint(it)
+        }
     }
 }

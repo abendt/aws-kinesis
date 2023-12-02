@@ -206,7 +206,7 @@ class KinesisConsumerSpec : StringSpec() {
                     return SdkBytes.fromByteBuffer(buffer).asUtf8String()
                 }
 
-                override fun callback(payload: String) {
+                override fun processPayload(payload: String) {
                     try {
                         if (shouldFail) {
                             throw RuntimeException("for test")
