@@ -10,3 +10,8 @@ dependencies {
     testImplementation("org.testcontainers:localstack")
     testImplementation("io.kotest.extensions:kotest-extensions-testcontainers:2.0.2")
 }
+
+tasks.named<Test>("test") {
+
+    maxParallelForks = 2
+}

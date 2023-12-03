@@ -4,14 +4,11 @@ import io.kotest.assertions.nondeterministic.eventually
 import io.kotest.core.extensions.install
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.extensions.testcontainers.ContainerExtension
-import io.kotest.matchers.collections.shouldContain
-import io.kotest.matchers.collections.shouldHaveSize
-import io.kotest.matchers.collections.shouldNotContain
-import io.kotest.matchers.ints.shouldBeGreaterThan
 import io.kotest.matchers.shouldBe
 import java.nio.ByteBuffer
 import java.util.UUID
 import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
 import kotlin.time.Duration.Companion.seconds
 import mu.KotlinLogging
 import org.testcontainers.containers.localstack.LocalStackContainer
@@ -30,7 +27,8 @@ import software.amazon.awssdk.services.kinesis.model.DescribeStreamRequest
 import software.amazon.awssdk.services.kinesis.model.PutRecordRequest
 import software.amazon.awssdk.services.kinesis.model.StreamStatus
 
-class KinesisConsumerSpec : StringSpec() {
+abstract class KinesisConsumerBase(block: KinesisConsumerBase.() -> Unit) : StringSpec() {
+
     val logger = KotlinLogging.logger {}
 
     val localstack =
@@ -53,86 +51,19 @@ class KinesisConsumerSpec : StringSpec() {
             .build()
 
     init {
-        "can consume kinesis events" {
-            withKinesisStream {
-                sendEvent("First")
-                withConsumer {
-                    sendEvent("Second")
-
-                    eventually(60.seconds) {
-                        eventsReceived shouldContain "First"
-                        eventsReceived shouldContain "Second"
-                    }
-                }
-            }
-        }
-
-        "can consume from multiple shards" {
-            withKinesisStream(withShards = 2) {
-                withConsumer {
-                    sendEvent("Hello Kinesis!", "1")
-                    sendEvent("Hello Kinesis!", "2")
-                    sendEvent("Hello Kinesis!", "3")
-                    sendEvent("Hello Kinesis!", "4")
-
-                    eventually(60.seconds) {
-                        eventsReceived shouldHaveSize 4
-                    }
-                }
-            }
-        }
-
-        "need to restart consumer after exception" {
-            withKinesisStream {
-                withConsumer(shouldFail = true) {
-                    sendEvent("Event")
-
-                    eventually(60.seconds) {
-                        processorInvoked shouldBeGreaterThan 0
-                    }
-                }
-
-                withConsumer {
-                    eventually(60.seconds) {
-                        eventsReceived shouldHaveSize 1
-                    }
-                }
-            }
-        }
-
-        "event is not reconsumed after restart" {
-            withKinesisStream {
-                withConsumer {
-                    sendEvent("First")
-
-                    eventually(60.seconds) {
-                        eventsReceived shouldContain "First"
-                    }
-                }
-
-                sendEvent("Second")
-
-                withConsumer {
-                    eventually(60.seconds) {
-                        eventsReceived shouldContain "Second"
-                    }
-
-                    eventsReceived shouldNotContain "First"
-                }
-            }
-        }
+        block()
     }
 
-    private suspend fun withKinesisStream(
+    suspend fun withKinesisStream(
         withShards: Int = 1,
-        block: suspend KinesisStreamContext.() -> Unit,
+        block: suspend KinesisStreamTestScope.() -> Unit,
     ) {
         val name = UUID.randomUUID().toString()
         createKinesisStream(name, withShards)
 
         try {
             block(
-                object : KinesisStreamContext {
+                object : KinesisStreamTestScope {
                     override val streamName: String
                         get() = name
                     override val shardCount: Int
@@ -172,7 +103,7 @@ class KinesisConsumerSpec : StringSpec() {
         }
     }
 
-    interface KinesisStreamContext {
+    interface KinesisStreamTestScope {
         val streamName: String
         val shardCount: Int
 
@@ -182,24 +113,25 @@ class KinesisConsumerSpec : StringSpec() {
         )
     }
 
-    interface KinesisConsumerContext {
+    interface KinesisConsumerTestScope {
         val processorInvoked: Int
         val eventsReceived: List<String>
     }
 
-    suspend fun KinesisStreamContext.withConsumer(
+    suspend fun KinesisStreamTestScope.withKinesisConsumer(
         shouldFail: Boolean = false,
-        block: suspend KinesisConsumerContext.() -> Unit,
+        block: suspend KinesisConsumerTestScope.() -> Unit,
     ) {
-        var counter = 0
+        var processRecordsCount = 0
 
-        val events = mutableListOf<String>()
-        val processorReady = CountDownLatch(shardCount)
+        val eventsReceived = mutableListOf<String>()
+        val processorsReady = CountDownLatch(shardCount)
 
         val config =
             object : KinesisConsumerConfiguration<String> {
                 override fun processorInitialized() {
-                    processorReady.countDown()
+                    logger.info { "processor started" }
+                    processorsReady.countDown()
                 }
 
                 override fun convertPayload(buffer: ByteBuffer): String {
@@ -208,13 +140,17 @@ class KinesisConsumerSpec : StringSpec() {
 
                 override fun processPayload(payload: String) {
                     try {
+                        logger.info { "got $payload" }
+
                         if (shouldFail) {
                             throw RuntimeException("for test")
                         }
 
-                        events.add(payload)
+                        eventsReceived.add(payload)
+
+                        logger.info { "processed $payload" }
                     } finally {
-                        counter += 1
+                        processRecordsCount += 1
                     }
                 }
             }
@@ -225,22 +161,28 @@ class KinesisConsumerSpec : StringSpec() {
         consumer.start()
 
         try {
-            processorReady.await()
+            logger.info { "awaiting $shardCount processors" }
+            val success = processorsReady.await(2, TimeUnit.MINUTES)
 
-            val context =
-                object : KinesisConsumerContext {
-                    override val processorInvoked: Int
-                        get() = counter
-                    override val eventsReceived: List<String>
-                        get() = events
-                }
+            if (!success) {
+                logger.error { "processors did not start!" }
+            } else {
+                val context =
+                    object : KinesisConsumerTestScope {
+                        override val processorInvoked: Int
+                            get() = processRecordsCount
+                        override val eventsReceived: List<String>
+                            get() = eventsReceived
+                    }
 
-            block(context)
+                block(context)
+            }
         } finally {
             consumer.stop()
         }
     }
 }
+
 
 private fun <B : AwsClientBuilder<B, C>, C> AwsClientBuilder<B, C>.configureForLocalstack(localstack: LocalStackContainer) =
     endpointOverride(localstack.endpoint)

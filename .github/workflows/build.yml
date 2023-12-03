@@ -34,6 +34,7 @@ jobs:
 
       - name: Run build with Gradle Wrapper
         run: ./gradlew build
+        timeout-minutes: 5
 
       - name: Test Report
         uses: dorny/test-reporter@v1

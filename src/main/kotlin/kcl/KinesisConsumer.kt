@@ -42,6 +42,9 @@ class KinesisConsumer<T>(
     @Volatile
     private var scheduler: Scheduler? = null
 
+    @Volatile
+    private var thread: Thread? = null
+
     fun start() {
         val workerIdentifier = UUID.randomUUID().toString()
 
@@ -72,7 +75,10 @@ class KinesisConsumer<T>(
             Scheduler(
                 configsBuilder.checkpointConfig(),
                 configsBuilder.coordinatorConfig().workerStateChangeListener(delegatingListener),
-                configsBuilder.leaseManagementConfig(),
+                configsBuilder.leaseManagementConfig()
+                    .shardSyncIntervalMillis(2000)
+                    .failoverTimeMillis(2000)
+                    .listShardsBackoffTimeInMillis(2000),
                 configsBuilder.lifecycleConfig(),
                 configsBuilder.metricsConfig(),
                 configsBuilder.processorConfig(),
@@ -87,10 +93,11 @@ class KinesisConsumer<T>(
             )
 
         logger.info { "starting scheduler" }
-        Thread(scheduler).apply {
-            isDaemon = true
-            start()
-        }
+        thread =
+            Thread(scheduler).apply {
+                isDaemon = true
+                start()
+            }
         logger.info { "started scheduler" }
     }
 
@@ -100,12 +107,13 @@ class KinesisConsumer<T>(
             val stopped = it.startGracefulShutdown().get()
             logger.info { "stopped gracefully $stopped" }
         }
+
+        thread?.join()
     }
 }
 
 class MyShardRecordProcessorFactory<T>(val config: KinesisConsumerConfiguration<T>) :
     ShardRecordProcessorFactory {
-
     val logger = KotlinLogging.logger {}
 
     override fun shardRecordProcessor(): ShardRecordProcessor {
@@ -116,7 +124,6 @@ class MyShardRecordProcessorFactory<T>(val config: KinesisConsumerConfiguration<
 }
 
 class MyShardProcessor<T>(val config: KinesisConsumerConfiguration<T>) : ShardRecordProcessor {
-
     val logger = KotlinLogging.logger {}
     var lastSequenceNumber: String? = null
 
@@ -134,26 +141,30 @@ class MyShardProcessor<T>(val config: KinesisConsumerConfiguration<T>) : ShardRe
         }.forEach { config.processPayload(it) }
 
         lastSequenceNumber = processRecords.records().last().sequenceNumber()
+
         processRecords.checkpointer().checkpoint()
+        logger.info { "checkpointed ${processRecords.records().last().sequenceNumber()}" }
     }
 
     override fun leaseLost(leaseLost: LeaseLostInput) {
-        logger.info { "leaseLost $leaseLost" }
+        logger.info { "leaseLost" }
     }
 
     override fun shardEnded(shardEnded: ShardEndedInput) {
-        logger.info { "shardEnded $shardEnded" }
+        logger.info { "shardEnded" }
 
         lastSequenceNumber?.let {
             shardEnded.checkpointer().checkpoint(it)
+            logger.info { "Checkpointed previous sequence" }
         }
     }
 
     override fun shutdownRequested(shutdownRequested: ShutdownRequestedInput) {
-        logger.info { "shutdownRequested $shutdownRequested" }
+        logger.info { "shutdownRequested" }
 
         lastSequenceNumber?.let {
             shutdownRequested.checkpointer().checkpoint(it)
+            logger.info { "Checkpointed previous sequence" }
         }
     }
 }
