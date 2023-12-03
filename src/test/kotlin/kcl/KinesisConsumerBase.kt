@@ -9,6 +9,7 @@ import java.nio.ByteBuffer
 import java.util.UUID
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicInteger
 import kotlin.time.Duration.Companion.seconds
 import mu.KotlinLogging
 import org.testcontainers.containers.localstack.LocalStackContainer
@@ -99,7 +100,7 @@ abstract class KinesisConsumerBase(block: KinesisConsumerBase.() -> Unit) : Stri
 
             response.streamDescription().streamStatus() shouldBe StreamStatus.ACTIVE
 
-            logger.info { "stream $name is available ${response.streamDescription().streamARN()}" }
+            logger.info { "stream $name is available" }
         }
     }
 
@@ -119,13 +120,16 @@ abstract class KinesisConsumerBase(block: KinesisConsumerBase.() -> Unit) : Stri
     }
 
     suspend fun KinesisStreamTestScope.withKinesisConsumer(
-        shouldFail: Boolean = false,
+        shouldFailPermanently: Boolean = false,
+        shouldFailPermanentlyOn: Set<String> = emptySet(),
+        shouldFailTemporaryOn: Map<String, Int> = emptyMap(),
         block: suspend KinesisConsumerTestScope.() -> Unit,
     ) {
         var processRecordsCount = 0
 
         val eventsReceived = mutableListOf<String>()
         val processorsReady = CountDownLatch(shardCount)
+        val tempFails = shouldFailTemporaryOn.mapValues { AtomicInteger(it.value) }
 
         val config =
             object : KinesisConsumerConfiguration<String> {
@@ -142,8 +146,19 @@ abstract class KinesisConsumerBase(block: KinesisConsumerBase.() -> Unit) : Stri
                     try {
                         logger.info { "got $payload" }
 
-                        if (shouldFail) {
-                            throw RuntimeException("for test")
+                        if (shouldFailPermanently) {
+                            throw RuntimeException("fail always")
+                        }
+
+                        if (shouldFailPermanentlyOn.contains(payload)) {
+                            throw RuntimeException("fail on $payload")
+                        }
+
+                        tempFails[payload]?.let {
+                            val count = it.getAndDecrement()
+                            if (count > 0) {
+                                throw RuntimeException("fail #$count")
+                            }
                         }
 
                         eventsReceived.add(payload)

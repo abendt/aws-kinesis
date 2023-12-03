@@ -10,17 +10,14 @@ import kotlin.time.Duration.Companion.seconds
 class ReconsumeAfterRestartSpec: KinesisConsumerBase( {
     "not committed is re-delivered after restart" {
         withKinesisStream {
-            withKinesisConsumer(shouldFail = true) {
+            withKinesisConsumer(shouldFailPermanently = true) {
                 sendEvent("Event")
 
                 eventually(60.seconds) {
                     processorInvoked shouldBeEqual 1
                 }
-
-                Thread.sleep(1000)
             }
 
-            Thread.sleep(1000)
             logger.info { "restarting consumer" }
 
             withKinesisConsumer {
