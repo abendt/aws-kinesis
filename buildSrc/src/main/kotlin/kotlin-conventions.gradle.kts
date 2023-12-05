@@ -1,5 +1,6 @@
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+import gradle.kotlin.dsl.accessors._749471404c71924f08255562a758d0eb.java
 import org.gradle.accessors.dm.LibrariesForLibs
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
     id("org.jetbrains.kotlin.jvm")
@@ -10,10 +11,15 @@ repositories {
 }
 
 val libs = the<LibrariesForLibs>()
+val javaVersion = libs.versions.java.get()
+
+java {
+    targetCompatibility = JavaVersion.valueOf("VERSION_${javaVersion}")
+}
 
 kotlin {
     jvmToolchain {
-        languageVersion.set(JavaLanguageVersion.of(libs.versions.java.get()))
+        languageVersion.set(JavaLanguageVersion.of(javaVersion))
     }
 }
 
@@ -43,11 +49,6 @@ tasks.withType(KotlinCompile::class.java).configureEach {
             freeCompilerArgs += "-Xdebug"
         }
 
-        jvmTarget = libs.versions.java.get()
+        jvmTarget = "21"
     }
-}
-
-tasks.withType<JavaCompile> {
-    sourceCompatibility = libs.versions.java.get()
-    targetCompatibility = libs.versions.java.get()
 }

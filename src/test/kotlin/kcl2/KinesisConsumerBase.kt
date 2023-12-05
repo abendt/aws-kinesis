@@ -1,4 +1,4 @@
-package kcl
+package kcl2
 
 import config.configureForLocalstack
 import io.kotest.assertions.nondeterministic.eventually
@@ -10,7 +10,6 @@ import java.nio.ByteBuffer
 import java.util.UUID
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
-import java.util.concurrent.atomic.AtomicInteger
 import kotlin.time.Duration.Companion.seconds
 import mu.KotlinLogging
 import org.testcontainers.containers.localstack.LocalStackContainer
@@ -22,7 +21,8 @@ import software.amazon.awssdk.services.kinesis.KinesisAsyncClient
 import software.amazon.awssdk.services.kinesis.model.CreateStreamRequest
 import software.amazon.awssdk.services.kinesis.model.DeleteStreamRequest
 import software.amazon.awssdk.services.kinesis.model.DescribeStreamRequest
-import software.amazon.awssdk.services.kinesis.model.PutRecordRequest
+import software.amazon.awssdk.services.kinesis.model.PutRecordsRequest
+import software.amazon.awssdk.services.kinesis.model.PutRecordsRequestEntry
 import software.amazon.awssdk.services.kinesis.model.StreamStatus
 
 abstract class KinesisConsumerBase(block: KinesisConsumerBase.() -> Unit) : StringSpec() {
@@ -67,15 +67,16 @@ abstract class KinesisConsumerBase(block: KinesisConsumerBase.() -> Unit) : Stri
                         get() = withShards
 
                     override fun sendEvent(
-                        payload: String,
+                        payload: List<String>,
                         partitionKey: String,
                     ) {
-                        kinesisClient.putRecord(
-                            PutRecordRequest.builder()
-                                .streamName(name)
-                                .partitionKey(partitionKey)
-                                .data(SdkBytes.fromUtf8String(payload)).build(),
-                        ).get()
+                        kinesisClient.putRecords(
+                            PutRecordsRequest.builder().streamName(name).records(
+                                payload.map {
+                                    PutRecordsRequestEntry.builder().partitionKey(partitionKey).data(SdkBytes.fromUtf8String(it)).build()
+                                },
+                            ).build(),
+                        )
                     }
                 },
             )
@@ -105,7 +106,7 @@ abstract class KinesisConsumerBase(block: KinesisConsumerBase.() -> Unit) : Stri
         val shardCount: Int
 
         fun sendEvent(
-            payload: String,
+            payload: List<String>,
             partitionKey: String = "partition-1",
         )
     }
@@ -118,17 +119,17 @@ abstract class KinesisConsumerBase(block: KinesisConsumerBase.() -> Unit) : Stri
     suspend fun KinesisStreamTestScope.withKinesisConsumer(
         shouldFailPermanently: Boolean = false,
         shouldFailPermanentlyOn: Set<String> = emptySet(),
-        shouldFailTemporaryOn: Map<String, Int> = emptyMap(),
+        // shouldFailTemporaryOn: Map<String, Int> = emptyMap(),
         block: suspend KinesisConsumerTestScope.() -> Unit,
     ) {
         var processRecordsCount = 0
 
         val eventsReceived = mutableListOf<String>()
         val processorsReady = CountDownLatch(shardCount)
-        val tempFails = shouldFailTemporaryOn.mapValues { AtomicInteger(it.value) }
+        // val tempFails = shouldFailTemporaryOn.mapValues { AtomicInteger(it.value) }
 
         val config =
-            object : KinesisConsumerConfiguration<String> {
+            object : ConsumerConfiguration<String> {
                 override fun processorInitialized() {
                     logger.info { "processor started" }
                     processorsReady.countDown()
@@ -138,7 +139,7 @@ abstract class KinesisConsumerBase(block: KinesisConsumerBase.() -> Unit) : Stri
                     return SdkBytes.fromByteBuffer(buffer).asUtf8String()
                 }
 
-                override fun processPayload(payload: String) {
+                override fun processPayload(payload: List<Pair<String, String>>) {
                     try {
                         logger.info { "got $payload" }
 
@@ -146,18 +147,11 @@ abstract class KinesisConsumerBase(block: KinesisConsumerBase.() -> Unit) : Stri
                             throw RuntimeException("fail always")
                         }
 
-                        if (shouldFailPermanentlyOn.contains(payload)) {
+                        if (payload.any { shouldFailPermanentlyOn.contains(it.second) }) {
                             throw RuntimeException("fail on $payload")
                         }
 
-                        tempFails[payload]?.let {
-                            val count = it.getAndDecrement()
-                            if (count > 0) {
-                                throw RuntimeException("fail #$count")
-                            }
-                        }
-
-                        eventsReceived.add(payload)
+                        eventsReceived.addAll(payload.map { it.second })
 
                         logger.info { "processed $payload" }
                     } finally {
