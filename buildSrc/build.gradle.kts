@@ -7,12 +7,6 @@ repositories {
     gradlePluginPortal()
 }
 
-kotlin {
-    jvmToolchain {
-        languageVersion.set(JavaLanguageVersion.of(libs.versions.java.get()))
-    }
-}
-
 dependencies {
     val kotlinVersion = libs.versions.kotlin.get()
     val testLoggerPluginVersion = libs.versions.gradleTestLoggerPlugin.get()

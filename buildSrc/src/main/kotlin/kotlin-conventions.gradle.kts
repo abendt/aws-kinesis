@@ -18,9 +18,7 @@ java {
 }
 
 kotlin {
-    jvmToolchain {
-        languageVersion.set(JavaLanguageVersion.of(javaVersion))
-    }
+    jvmToolchain(javaVersion.toInt())
 }
 
 dependencies {
@@ -48,7 +46,5 @@ tasks.withType(KotlinCompile::class.java).configureEach {
         if (isIdea) {
             freeCompilerArgs += "-Xdebug"
         }
-
-        jvmTarget = "21"
     }
 }
