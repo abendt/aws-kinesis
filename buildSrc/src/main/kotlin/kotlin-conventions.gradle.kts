@@ -14,7 +14,7 @@ val libs = the<LibrariesForLibs>()
 val javaVersion = libs.versions.java.get()
 
 java {
-    targetCompatibility = JavaVersion.valueOf("VERSION_${javaVersion}")
+    targetCompatibility = JavaVersion.valueOf("VERSION_$javaVersion")
 }
 
 kotlin {
