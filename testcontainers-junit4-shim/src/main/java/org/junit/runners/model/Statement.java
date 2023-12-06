@@ -1,4 +1,5 @@
 package org.junit.runners.model;
 
 @SuppressWarnings("unused")
-public class Statement {}
+public class Statement {
+}

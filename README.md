@@ -1,14 +1,6 @@
-Kotlin single module project blueprint
+AWS Kinesis
 ======================================
 
-Buildtool
-* Gradle (Kotlin DSL)
-
-Basic dependencies
-* Kotlin JVM
-* Kotlin Logging
-* slf4j + logback
-
-Testing
-* Kotest
-* mockk
+* Using KCL
+* Using Apache Camel
+* Using Spring Cloud Stream
