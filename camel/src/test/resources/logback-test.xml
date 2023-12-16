@@ -14,6 +14,7 @@
     <logger name="localstack" level="WARN" />
     <logger name="software.amazon.kinesis" level="DEBUG" />
     <logger name="org.apache.camel.component.aws2" level="DEBUG" />
+    <logger name="org.apache.camel.processor.resume" level="DEBUG" />
 
     <root level="WARN">
         <appender-ref ref="STDOUT"/>

@@ -11,6 +11,7 @@ dependencies {
     testImplementation("org.testcontainers:localstack")
     testImplementation("io.kotest.extensions:kotest-extensions-testcontainers:2.0.2")
     testImplementation(project(":testcontainers-junit4-shim"))
+    testImplementation(project(":test-utils"))
 }
 
 tasks.named<Test>("test") {

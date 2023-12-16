@@ -8,6 +8,7 @@ dependencyResolutionManagement {
     }
 }
 
+include("test-utils")
 include("kcl")
 include("camel")
 include("testcontainers-junit4-shim")

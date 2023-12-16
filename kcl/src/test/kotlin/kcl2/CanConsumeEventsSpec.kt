@@ -9,7 +9,7 @@ class CanConsumeEventsSpec : KinesisConsumerBase({
     "can consume events" {
         withKinesisStream {
             withKinesisConsumer {
-                sendEvent(listOf("1", "2", "3"))
+                sendEvents(listOf("1", "2", "3"))
 
                 eventually(30.seconds) {
                     eventsReceived shouldContainAll listOf("1", "2", "3")

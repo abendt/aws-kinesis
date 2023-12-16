@@ -22,6 +22,7 @@ dependencies {
     testImplementation("org.testcontainers:localstack")
     testImplementation("io.kotest.extensions:kotest-extensions-testcontainers:2.0.2")
     testImplementation(project(":testcontainers-junit4-shim"))
+    testImplementation(project(":test-utils"))
 
     testImplementation("io.kotest.extensions:kotest-extensions-spring:1.1.3")
     testImplementation("com.ninja-squad:springmockk:4.0.2")

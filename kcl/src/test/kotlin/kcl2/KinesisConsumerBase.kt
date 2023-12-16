@@ -1,16 +1,12 @@
 package kcl2
 
 import config.configureForLocalstack
-import io.kotest.assertions.nondeterministic.eventually
 import io.kotest.core.extensions.install
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.extensions.testcontainers.ContainerExtension
-import io.kotest.matchers.shouldBe
 import java.nio.ByteBuffer
-import java.util.UUID
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
-import kotlin.time.Duration.Companion.seconds
 import mu.KotlinLogging
 import org.testcontainers.containers.localstack.LocalStackContainer
 import org.testcontainers.utility.DockerImageName
@@ -18,12 +14,9 @@ import software.amazon.awssdk.core.SdkBytes
 import software.amazon.awssdk.services.cloudwatch.CloudWatchAsyncClient
 import software.amazon.awssdk.services.dynamodb.DynamoDbAsyncClient
 import software.amazon.awssdk.services.kinesis.KinesisAsyncClient
-import software.amazon.awssdk.services.kinesis.model.CreateStreamRequest
-import software.amazon.awssdk.services.kinesis.model.DeleteStreamRequest
-import software.amazon.awssdk.services.kinesis.model.DescribeStreamRequest
-import software.amazon.awssdk.services.kinesis.model.PutRecordsRequest
-import software.amazon.awssdk.services.kinesis.model.PutRecordsRequestEntry
-import software.amazon.awssdk.services.kinesis.model.StreamStatus
+import software.amazon.awssdk.services.kinesis.KinesisClient
+import utils.KinesisFixture
+import utils.KinesisStreamTestScope
 
 abstract class KinesisConsumerBase(block: KinesisConsumerBase.() -> Unit) : StringSpec() {
     val logger = KotlinLogging.logger {}
@@ -51,64 +44,13 @@ abstract class KinesisConsumerBase(block: KinesisConsumerBase.() -> Unit) : Stri
         block()
     }
 
+    val fixture = KinesisFixture(KinesisClient.builder().configureForLocalstack(localstack).build())
+
     suspend fun withKinesisStream(
         withShards: Int = 1,
         block: suspend KinesisStreamTestScope.() -> Unit,
     ) {
-        val name = UUID.randomUUID().toString()
-        createKinesisStream(name, withShards)
-
-        try {
-            block(
-                object : KinesisStreamTestScope {
-                    override val streamName: String
-                        get() = name
-                    override val shardCount: Int
-                        get() = withShards
-
-                    override fun sendEvent(
-                        payload: List<String>,
-                        partitionKey: String,
-                    ) {
-                        kinesisClient.putRecords(
-                            PutRecordsRequest.builder().streamName(name).records(
-                                payload.map {
-                                    PutRecordsRequestEntry.builder().partitionKey(partitionKey).data(SdkBytes.fromUtf8String(it)).build()
-                                },
-                            ).build(),
-                        )
-                    }
-                },
-            )
-        } finally {
-            kinesisClient.deleteStream(DeleteStreamRequest.builder().streamName(name).build()).get()
-        }
-    }
-
-    private suspend fun createKinesisStream(
-        name: String,
-        withShardCount: Int = 1,
-    ) {
-        logger.info { "creating stream $name" }
-        kinesisClient.createStream(CreateStreamRequest.builder().shardCount(withShardCount).streamName(name).build()).get()
-
-        eventually(10.seconds) {
-            val response = kinesisClient.describeStream(DescribeStreamRequest.builder().streamName(name).build()).get()
-
-            response.streamDescription().streamStatus() shouldBe StreamStatus.ACTIVE
-
-            logger.info { "stream $name is available" }
-        }
-    }
-
-    interface KinesisStreamTestScope {
-        val streamName: String
-        val shardCount: Int
-
-        fun sendEvent(
-            payload: List<String>,
-            partitionKey: String = "partition-1",
-        )
+        fixture.withKinesisStream(withShards = withShards, block = block)
     }
 
     interface KinesisConsumerTestScope {
