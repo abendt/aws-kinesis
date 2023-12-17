@@ -14,9 +14,7 @@ dependencies {
     implementation("org.apache.camel.springboot:camel-bean-starter")
 
     implementation("org.springframework.boot:spring-boot-starter-web")
-    testImplementation("org.springframework.boot:spring-boot-starter-test") {
-        exclude(mapOf("group" to "org.junit.vintage", "module" to "junit-vintage-engine"))
-    }
+    testImplementation("org.springframework.boot:spring-boot-starter-test")
 
     testImplementation(platform("org.testcontainers:testcontainers-bom:1.19.3"))
     testImplementation("org.testcontainers:localstack")
@@ -26,4 +24,11 @@ dependencies {
 
     testImplementation("io.kotest.extensions:kotest-extensions-spring:1.1.3")
     testImplementation("com.ninja-squad:springmockk:4.0.2")
+}
+
+configurations {
+    all {
+        exclude(group = "org.junit.vintage", module = "junit-vintage-engine")
+        exclude(group = "com.vaadin.external.google", module = "android-json")
+    }
 }

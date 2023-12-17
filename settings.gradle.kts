@@ -11,4 +11,5 @@ dependencyResolutionManagement {
 include("test-utils")
 include("kcl")
 include("camel")
+include("spring-cloud-stream")
 include("testcontainers-junit4-shim")

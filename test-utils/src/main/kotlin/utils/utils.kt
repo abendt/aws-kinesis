@@ -12,6 +12,7 @@ import software.amazon.awssdk.services.kinesis.model.DescribeStreamRequest
 import software.amazon.awssdk.services.kinesis.model.PutRecordRequest
 import software.amazon.awssdk.services.kinesis.model.PutRecordsRequest
 import software.amazon.awssdk.services.kinesis.model.PutRecordsRequestEntry
+import software.amazon.awssdk.services.kinesis.model.ResourceInUseException
 import software.amazon.awssdk.services.kinesis.model.StreamStatus
 
 interface KinesisStreamTestScope {
@@ -37,7 +38,10 @@ class KinesisFixture(val kinesisClient: KinesisClient) {
         withShards: Int = 1,
         block: suspend KinesisStreamTestScope.() -> Unit,
     ) {
-        createKinesisStream(name, withShards)
+        try {
+            createKinesisStream(name, withShards)
+        } catch (e: ResourceInUseException) {
+        }
 
         try {
             block(
@@ -57,6 +61,8 @@ class KinesisFixture(val kinesisClient: KinesisClient) {
                                 .partitionKey(partitionKey)
                                 .data(SdkBytes.fromUtf8String(payload)).build(),
                         )
+
+                        logger.info { "sent event $payload" }
                     }
 
                     override fun sendEvents(
@@ -70,6 +76,8 @@ class KinesisFixture(val kinesisClient: KinesisClient) {
                                 },
                             ).build(),
                         )
+
+                        logger.info { "sent events $payload" }
                     }
                 },
             )
