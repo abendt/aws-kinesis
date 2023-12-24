@@ -15,6 +15,8 @@ import org.springframework.messaging.support.GenericMessage
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider
+import software.amazon.awssdk.regions.Region
+import software.amazon.awssdk.regions.providers.AwsRegionProvider
 
 @SpringBootTest
 @Import(TestChannelBinderConfiguration::class)
@@ -37,6 +39,9 @@ class KinesisConsumerSpec : StringSpec() {
             StaticCredentialsProvider.create(
                 AwsBasicCredentials.create("dummy", "dummy"),
             )
+
+        @Bean
+        fun awsRegionProvider(): AwsRegionProvider = AwsRegionProvider { Region.AP_EAST_1 }
     }
 
     init {

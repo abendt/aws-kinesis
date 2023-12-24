@@ -17,6 +17,7 @@ import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider
 import software.amazon.awssdk.awscore.client.builder.AwsClientBuilder
 import software.amazon.awssdk.regions.Region
+import software.amazon.awssdk.regions.providers.AwsRegionProvider
 import software.amazon.awssdk.services.dynamodb.DynamoDbAsyncClient
 import software.amazon.awssdk.services.kinesis.KinesisAsyncClient
 import software.amazon.awssdk.services.kinesis.KinesisClient
@@ -48,6 +49,9 @@ class KinesisConsumerIntegrationSpec : StringSpec() {
 
         @Bean
         fun awsCredentialsProvider(): AwsCredentialsProvider = StaticCredentialsProvider.create(AwsBasicCredentials.create(localstack.accessKey, localstack.secretKey))
+
+        @Bean
+        fun awsRegionProvider(): AwsRegionProvider = AwsRegionProvider { Region.AP_EAST_1 }
     }
 
     override fun extensions() = listOf(SpringExtension)
