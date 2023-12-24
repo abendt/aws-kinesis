@@ -57,6 +57,7 @@ public class Kinesis2Consumer extends ScheduledBatchPollingConsumer
 
     public Kinesis2Consumer(Kinesis2Endpoint endpoint, Processor processor) {
         super(endpoint, processor);
+        setDelay(2000);
     }
 
     public KinesisConnection getConnection() {
