@@ -2,6 +2,7 @@ package kinesis
 
 import io.kotest.assertions.nondeterministic.eventuallyConfig
 import io.kotest.core.spec.style.StringSpec
+import java.net.URI
 import kotlin.time.Duration.Companion.seconds
 import mu.KotlinLogging
 import org.slf4j.LoggerFactory
@@ -24,12 +25,14 @@ abstract class LocalstackBase(block: LocalstackBase.() -> Unit = {}) : StringSpe
 
     companion object {
         val localstack: LocalStackContainer by lazy {
-            LocalStackContainer(DockerImageName.parse("localstack/localstack:3.0.2")).withLogConsumer(
-                Slf4jLogConsumer(
-                    LoggerFactory.getLogger("localstack.\u26C8"),
-                    true,
-                ),
-            ).also { it.start() }
+            LocalStackContainer(DockerImageName.parse("localstack/localstack"))
+                .withEnv(mapOf("DEBUG" to "1"))
+                .withLogConsumer(
+                    Slf4jLogConsumer(
+                        LoggerFactory.getLogger("localstack.\u26C8"),
+                        true,
+                    ),
+                ).also { it.start() }
         }
     }
 
@@ -57,3 +60,15 @@ fun <B : AwsClientBuilder<B, C>, C> AwsClientBuilder<B, C>.configureForLocalstac
             ),
         )
         .region(Region.of(localstack.region))
+
+fun <B : AwsClientBuilder<B, C>, C> AwsClientBuilder<B, C>.configureForLocalstack() =
+    endpointOverride(URI("http://localhost:4566"))
+        .credentialsProvider(
+            StaticCredentialsProvider.create(
+                AwsBasicCredentials.create(
+                    "112233445566",
+                    "secret",
+                ),
+            ),
+        )
+        .region(Region.of("eu-east-1"))

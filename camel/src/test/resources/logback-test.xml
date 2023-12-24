@@ -11,7 +11,7 @@
     </appender>
 
     <logger name="kinesis" level="DEBUG" />
-    <logger name="localstack" level="WARN" />
+    <logger name="localstack" level="INFO" />
     <logger name="software.amazon.kinesis" level="DEBUG" />
     <logger name="org.apache.camel.component.aws2" level="DEBUG" />
 

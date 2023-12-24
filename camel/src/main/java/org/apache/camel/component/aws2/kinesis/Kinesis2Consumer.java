@@ -17,6 +17,7 @@
 package org.apache.camel.component.aws2.kinesis;
 
 import java.util.ArrayDeque;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Queue;
@@ -48,6 +49,8 @@ public class Kinesis2Consumer extends ScheduledBatchPollingConsumer
         implements ResumeAware<ResumeStrategy> {
     private static final Logger LOG = LoggerFactory.getLogger(Kinesis2Consumer.class);
 
+    List<String> iterators = new ArrayList<>();
+
     private KinesisConnection connection;
     private ResumeStrategy resumeStrategy;
 
@@ -57,7 +60,7 @@ public class Kinesis2Consumer extends ScheduledBatchPollingConsumer
 
     public Kinesis2Consumer(Kinesis2Endpoint endpoint, Processor processor) {
         super(endpoint, processor);
-        setDelay(2000);
+        setDelay(1000);
     }
 
     public KinesisConnection getConnection() {
@@ -164,6 +167,12 @@ public class Kinesis2Consumer extends ScheduledBatchPollingConsumer
             return;
         }
 
+        if (iterators.contains(shardIterator)) {
+            LOG.warn("Re-using previous iterator! {}", shardIterator);
+        }
+
+        iterators.add(shardIterator);
+
         GetRecordsRequest req =
                 GetRecordsRequest.builder()
                         .streamARN(getStreamARN())
@@ -194,9 +203,6 @@ public class Kinesis2Consumer extends ScheduledBatchPollingConsumer
         // we left off, however, I don't know what happens to subsequent
         // exchanges when an earlier exchange fails.
         updateShardIterator(shard, result.nextShardIterator());
-
-        LOG.debug("used iterator {}", shardIterator);
-        LOG.debug("next iterator {}", result.nextShardIterator());
     }
 
     private void updateShardIterator(Shard shard, String nextShardIterator) {
@@ -237,7 +243,7 @@ public class Kinesis2Consumer extends ScheduledBatchPollingConsumer
 
             GetShardIteratorRequest.Builder request =
                     GetShardIteratorRequest.builder()
-                            .streamName(getEndpoint().getConfiguration().getStreamName())
+                            .streamARN(getStreamARN())
                             .shardId(shardId)
                             .shardIteratorType(getEndpoint().getConfiguration().getIteratorType());
 

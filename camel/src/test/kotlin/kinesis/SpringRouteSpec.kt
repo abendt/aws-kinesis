@@ -7,7 +7,7 @@ import org.springframework.boot.test.context.TestConfiguration
 import org.springframework.context.annotation.Import
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-class SpringKinesisConsumerSpec : SpringLocalstackBase() {
+class SpringRouteSpec : SpringLocalstackBase() {
     @MockkBean(relaxed = true)
     lateinit var myService: MyService
 
