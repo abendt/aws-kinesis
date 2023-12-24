@@ -48,7 +48,10 @@ class KinesisConsumerIntegrationSpec : StringSpec() {
         fun dynamoDbAsyncClient() = DynamoDbAsyncClient.builder().configureForLocalstack(localstack).build()
 
         @Bean
-        fun awsCredentialsProvider(): AwsCredentialsProvider = StaticCredentialsProvider.create(AwsBasicCredentials.create(localstack.accessKey, localstack.secretKey))
+        fun awsCredentialsProvider(): AwsCredentialsProvider =
+            StaticCredentialsProvider.create(
+                AwsBasicCredentials.create(localstack.accessKey, localstack.secretKey),
+            )
 
         @Bean
         fun awsRegionProvider(): AwsRegionProvider = AwsRegionProvider { Region.AP_EAST_1 }
