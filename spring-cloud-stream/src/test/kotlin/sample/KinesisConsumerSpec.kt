@@ -15,9 +15,6 @@ import org.springframework.messaging.support.GenericMessage
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider
-import software.amazon.awssdk.services.dynamodb.DynamoDbAsyncClient
-import software.amazon.awssdk.services.kinesis.KinesisAsyncClient
-import software.amazon.awssdk.services.kinesis.KinesisClient
 
 @SpringBootTest
 @Import(TestChannelBinderConfiguration::class)
@@ -32,12 +29,14 @@ class KinesisConsumerSpec : StringSpec() {
 
     @TestConfiguration
     class MyConfiguration {
-
         /**
          * We need to provide some dummy credentials as auto config will otherwise fail on GitHub
          */
         @Bean
-        fun awsCredentialsProvider(): AwsCredentialsProvider = StaticCredentialsProvider.create(AwsBasicCredentials.create("dummy", "dummy"))
+        fun awsCredentialsProvider(): AwsCredentialsProvider =
+            StaticCredentialsProvider.create(
+                AwsBasicCredentials.create("dummy", "dummy"),
+            )
     }
 
     init {
