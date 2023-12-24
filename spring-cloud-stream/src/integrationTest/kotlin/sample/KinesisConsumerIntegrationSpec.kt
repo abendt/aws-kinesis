@@ -13,6 +13,7 @@ import org.testcontainers.containers.localstack.LocalStackContainer
 import org.testcontainers.containers.output.Slf4jLogConsumer
 import org.testcontainers.utility.DockerImageName
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials
+import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider
 import software.amazon.awssdk.awscore.client.builder.AwsClientBuilder
 import software.amazon.awssdk.regions.Region
@@ -44,6 +45,9 @@ class KinesisConsumerIntegrationSpec : StringSpec() {
 
         @Bean
         fun dynamoDbAsyncClient() = DynamoDbAsyncClient.builder().configureForLocalstack(localstack).build()
+
+        @Bean
+        fun awsCredentialsProvider(): AwsCredentialsProvider = StaticCredentialsProvider.create(AwsBasicCredentials.create(localstack.accessKey, localstack.secretKey))
     }
 
     override fun extensions() = listOf(SpringExtension)
