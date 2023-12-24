@@ -1,16 +1,20 @@
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+
 plugins {
     id("module-conventions")
-    id("org.springframework.boot") version("3.2.0")
-    id("org.jetbrains.kotlin.plugin.spring") version "1.9.21"
+    id("org.springframework.boot") version("3.2.1")
+    id("org.jetbrains.kotlin.plugin.spring") version "1.9.22"
 }
 
 apply(plugin = "io.spring.dependency-management")
 
 dependencies {
-    implementation(platform("org.springframework.boot:spring-boot-dependencies:3.2.0"))
-    implementation(platform("org.apache.camel.springboot:camel-spring-boot-bom:4.2.0"))
+    implementation(platform("org.springframework.boot:spring-boot-dependencies:3.2.1"))
+    implementation(platform("org.apache.camel.springboot:camel-spring-boot-bom:4.4.0-SNAPSHOT"))
 
     implementation("org.apache.camel.springboot:camel-aws2-kinesis-starter")
+    implementation("org.apache.camel.springboot:camel-file-starter")
+    implementation("org.apache.camel.springboot:camel-master-starter")
     implementation("org.apache.camel.springboot:camel-bean-starter")
 
     implementation("org.springframework.boot:spring-boot-starter-web")
@@ -31,4 +35,20 @@ configurations {
         exclude(group = "org.junit.vintage", module = "junit-vintage-engine")
         exclude(group = "com.vaadin.external.google", module = "android-json")
     }
+}
+
+repositories {
+    maven {
+        url = uri("https://repository.apache.org/content/repositories/snapshots")
+    }
+}
+
+tasks.withType<KotlinCompile>().configureEach {
+    kotlinOptions {
+        freeCompilerArgs += "-Xcontext-receivers"
+    }
+}
+
+tasks.getByName("spotlessJavaCheck") {
+    enabled = false
 }

@@ -7,7 +7,7 @@ import io.github.resilience4j.retry.RetryRegistry
 import java.time.Duration
 import java.time.Instant
 import mu.KotlinLogging
-import software.amazon.kinesis.exceptions.ThrottlingException
+import software.amazon.kinesis.exceptions.KinesisClientLibRetryableException
 import software.amazon.kinesis.lifecycle.events.ProcessRecordsInput
 import software.amazon.kinesis.processor.RecordProcessorCheckpointer
 
@@ -23,7 +23,7 @@ class CheckpointStrategyFactory(
         RetryConfig.custom<Any>()
             .maxAttempts(maxRetries)
             .intervalFunction(intervalFunction)
-            .retryExceptions(ThrottlingException::class.java)
+            .retryExceptions(KinesisClientLibRetryableException::class.java)
             .failAfterMaxAttempts(true)
             .build()
 

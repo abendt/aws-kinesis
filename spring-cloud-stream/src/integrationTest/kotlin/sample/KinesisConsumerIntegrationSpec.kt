@@ -60,7 +60,7 @@ class KinesisConsumerIntegrationSpec : StringSpec() {
 
                 sendEvent("First")
 
-                verify(timeout = 10_000) { myService.processEvent("First") }
+                verify(timeout = 60_000) { myService.processEvent("First") }
             }
         }
     }

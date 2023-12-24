@@ -5,7 +5,7 @@ import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 
 @Configuration
-class ApplicationConfiguration {
+class ConsumerConfiguration {
     @Bean
     fun input(myService: MyService): Consumer<String> =
         Consumer {

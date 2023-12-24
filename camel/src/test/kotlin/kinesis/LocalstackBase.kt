@@ -15,12 +15,16 @@ import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.services.kinesis.KinesisClient
 import utils.KinesisFixture
 
-abstract class LocalstackBase : StringSpec() {
+abstract class LocalstackBase(block: LocalstackBase.() -> Unit = {}) : StringSpec() {
+    init {
+        block.invoke(this)
+    }
+
     val logger = KotlinLogging.logger {}
 
     companion object {
         val localstack: LocalStackContainer by lazy {
-            LocalStackContainer(DockerImageName.parse("localstack/localstack")).withLogConsumer(
+            LocalStackContainer(DockerImageName.parse("localstack/localstack:3.0.2")).withLogConsumer(
                 Slf4jLogConsumer(
                     LoggerFactory.getLogger("localstack.\u26C8"),
                     true,

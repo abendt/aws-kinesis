@@ -1,8 +1,8 @@
 plugins {
     id("module-conventions")
 
-    id("org.springframework.boot") version ("3.2.0")
-    id("org.jetbrains.kotlin.plugin.spring") version "1.9.21"
+    id("org.springframework.boot") version("3.2.1")
+    id("org.jetbrains.kotlin.plugin.spring") version "1.9.22"
 
     id("jvm-test-suite")
 }
@@ -10,20 +10,13 @@ plugins {
 apply(plugin = "io.spring.dependency-management")
 
 dependencies {
-    implementation(platform("org.springframework.boot:spring-boot-dependencies:3.2.0"))
+    implementation(platform("org.springframework.boot:spring-boot-dependencies:3.2.1"))
     implementation(platform("org.springframework.cloud:spring-cloud-stream-dependencies:4.0.1"))
-    implementation(platform("software.amazon.awssdk:bom:2.22.0"))
+    implementation(platform("software.amazon.awssdk:bom:2.22.5"))
 
     implementation("org.springframework.boot:spring-boot-starter-web")
     implementation("org.springframework.boot:spring-boot-starter-actuator")
     implementation("org.springframework.cloud:spring-cloud-stream-binder-kinesis:4.0.1")
-
-    testImplementation("org.springframework.boot:spring-boot-starter-test")
-
-    testImplementation("org.springframework.cloud:spring-cloud-stream-test-binder")
-
-    testImplementation("io.kotest.extensions:kotest-extensions-spring:1.1.3")
-    testImplementation("com.ninja-squad:springmockk:4.0.2")
 }
 
 configurations {
@@ -36,22 +29,35 @@ configurations {
 
 testing {
     suites {
-        register<JvmTestSuite>("integrationTest") {
-            useJUnitJupiter(libs.versions.junit.get())
 
+        // test suite uses Test binder
+        val test by getting(JvmTestSuite::class) {
+            dependencies {
+                implementation("org.springframework.cloud:spring-cloud-stream-test-binder")
+            }
+        }
+
+        // integration suite uses Kinesis/Localstack and will use the real binder
+        register<JvmTestSuite>("integrationTest") {
             dependencies {
                 implementation(project())
 
                 implementation.bundle(libs.bundles.kotest)
-
-                implementation("org.springframework.boot:spring-boot-starter-test")
 
                 implementation(platform("org.testcontainers:testcontainers-bom:1.19.3"))
                 implementation("org.testcontainers:localstack")
                 implementation("io.kotest.extensions:kotest-extensions-testcontainers:2.0.2")
                 implementation(project(":testcontainers-junit4-shim"))
                 implementation(project(":test-utils"))
+            }
+        }
 
+        // common suite configuration
+        withType(JvmTestSuite::class).configureEach {
+            useJUnitJupiter(libs.versions.junit.get())
+
+            dependencies {
+                implementation("org.springframework.boot:spring-boot-starter-test")
                 implementation("io.kotest.extensions:kotest-extensions-spring:1.1.3")
                 implementation("com.ninja-squad:springmockk:4.0.2")
             }
