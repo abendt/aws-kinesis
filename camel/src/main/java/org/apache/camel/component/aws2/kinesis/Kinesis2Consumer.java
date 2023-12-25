@@ -76,10 +76,7 @@ public class Kinesis2Consumer extends ScheduledBatchPollingConsumer
         var processedExchangeCount = new AtomicInteger(0);
 
         if (!getEndpoint().getConfiguration().getShardId().isEmpty()) {
-            var request =
-                    DescribeStreamRequest.builder()
-                            .streamARN(getStreamARN())
-                            .build();
+            var request = DescribeStreamRequest.builder().streamARN(getStreamARN()).build();
 
             DescribeStreamResponse response;
             if (getEndpoint().getConfiguration().isAsyncClient()) {
@@ -394,10 +391,7 @@ public class Kinesis2Consumer extends ScheduledBatchPollingConsumer
     }
 
     private List<Shard> getShardList(final KinesisConnection kinesisConnection) {
-        var request =
-                ListShardsRequest.builder()
-                        .streamARN(getStreamARN())
-                        .build();
+        var request = ListShardsRequest.builder().streamARN(getStreamARN()).build();
 
         List<Shard> shardList;
         if (getEndpoint().getConfiguration().isAsyncClient()) {

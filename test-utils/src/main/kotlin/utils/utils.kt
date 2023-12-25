@@ -55,12 +55,13 @@ class KinesisFixture(val kinesisClient: KinesisClient) {
                         payload: String,
                         partitionKey: String,
                     ) {
-                        val result = kinesisClient.putRecord(
-                            PutRecordRequest.builder()
-                                .streamName(name)
-                                .partitionKey(partitionKey)
-                                .data(SdkBytes.fromUtf8String(payload)).build(),
-                        )
+                        val result =
+                            kinesisClient.putRecord(
+                                PutRecordRequest.builder()
+                                    .streamName(name)
+                                    .partitionKey(partitionKey)
+                                    .data(SdkBytes.fromUtf8String(payload)).build(),
+                            )
 
                         logger.info { "sent event $payload ${result.sequenceNumber()}" }
                     }
