@@ -15,5 +15,5 @@ dependencies {
 }
 
 tasks.named<Test>("test") {
-    maxParallelForks = 3
+    maxParallelForks = 2
 }

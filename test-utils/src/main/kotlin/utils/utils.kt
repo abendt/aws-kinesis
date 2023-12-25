@@ -83,7 +83,7 @@ class KinesisFixture(val kinesisClient: KinesisClient) {
                 },
             )
         } finally {
-            kinesisClient.deleteStream(DeleteStreamRequest.builder().streamName(name).build())
+            kinesisClient.deleteStream(DeleteStreamRequest.builder().enforceConsumerDeletion(true).streamName(name).build())
         }
     }
 

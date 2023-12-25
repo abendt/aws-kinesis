@@ -52,3 +52,7 @@ tasks.withType<KotlinCompile>().configureEach {
 tasks.getByName("spotlessJavaCheck") {
     enabled = false
 }
+
+tasks.named<Test>("test") {
+    maxParallelForks = 2
+}

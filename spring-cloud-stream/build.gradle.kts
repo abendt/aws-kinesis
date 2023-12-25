@@ -66,3 +66,7 @@ testing {
 }
 
 tasks.getByName("check").dependsOn("integrationTest")
+
+tasks.named<Test>("integrationTest") {
+    maxParallelForks = 2
+}
