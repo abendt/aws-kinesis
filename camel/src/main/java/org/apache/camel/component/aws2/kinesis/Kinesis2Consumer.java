@@ -78,7 +78,7 @@ public class Kinesis2Consumer extends ScheduledBatchPollingConsumer
         if (!getEndpoint().getConfiguration().getShardId().isEmpty()) {
             var request =
                     DescribeStreamRequest.builder()
-                            .streamName(getEndpoint().getConfiguration().getStreamName())
+                            .streamARN(getStreamARN())
                             .build();
 
             DescribeStreamResponse response;
@@ -153,7 +153,7 @@ public class Kinesis2Consumer extends ScheduledBatchPollingConsumer
     private void fetchAndPrepareRecordsForCamel(
             final Shard shard,
             final KinesisConnection kinesisConnection,
-            AtomicInteger processedExchangeCount) {
+            final AtomicInteger processedExchangeCount) {
         String shardIterator;
         try {
             shardIterator = getShardIterator(shard, kinesisConnection);
@@ -180,6 +180,8 @@ public class Kinesis2Consumer extends ScheduledBatchPollingConsumer
                         .limit(getEndpoint().getConfiguration().getMaxResultsPerRequest())
                         .build();
 
+        LOG.debug("getRecords {}", req);
+
         GetRecordsResponse result;
         if (getEndpoint().getConfiguration().isAsyncClient()) {
             try {
@@ -190,6 +192,8 @@ public class Kinesis2Consumer extends ScheduledBatchPollingConsumer
         } else {
             result = kinesisConnection.getClient(getEndpoint()).getRecords(req);
         }
+
+        LOG.debug("got {}", result);
 
         try {
             Queue<Exchange> exchanges = createExchanges(shard, result.records());
@@ -392,7 +396,7 @@ public class Kinesis2Consumer extends ScheduledBatchPollingConsumer
     private List<Shard> getShardList(final KinesisConnection kinesisConnection) {
         var request =
                 ListShardsRequest.builder()
-                        .streamName(getEndpoint().getConfiguration().getStreamName())
+                        .streamARN(getStreamARN())
                         .build();
 
         List<Shard> shardList;
