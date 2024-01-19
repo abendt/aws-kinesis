@@ -3,12 +3,12 @@
 java = "21"
 kotlin = "1.9.22"
 
-slf4j = "2.0.10"
+slf4j = "2.0.11"
 logback = "1.4.14"
 
 junit = "5.10.1"
 kotest = "5.8.0"
-mockk = "1.13.8"
+mockk = "1.13.9"
 
 ktlint = "0.50.0"
 
