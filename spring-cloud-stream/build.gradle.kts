@@ -44,7 +44,7 @@ testing {
 
                 implementation.bundle(libs.bundles.kotest)
 
-                implementation(platform("org.testcontainers:testcontainers-bom:1.19.3"))
+                implementation(platform("org.testcontainers:testcontainers-bom:1.19.4"))
                 implementation("org.testcontainers:localstack")
                 implementation("io.kotest.extensions:kotest-extensions-testcontainers:2.0.2")
                 implementation(project(":testcontainers-junit4-shim"))
