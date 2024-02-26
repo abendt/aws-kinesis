@@ -10,7 +10,7 @@ plugins {
 apply(plugin = "io.spring.dependency-management")
 
 dependencies {
-    implementation(platform("org.springframework.boot:spring-boot-dependencies:3.2.1"))
+    implementation(platform("org.springframework.boot:spring-boot-dependencies:3.2.3"))
     implementation(platform("org.springframework.cloud:spring-cloud-stream-dependencies:4.0.2"))
     implementation(platform("software.amazon.awssdk:bom:2.23.6"))
 
