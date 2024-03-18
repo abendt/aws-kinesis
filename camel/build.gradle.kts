@@ -10,7 +10,7 @@ apply(plugin = "io.spring.dependency-management")
 
 dependencies {
     implementation(platform("org.springframework.boot:spring-boot-dependencies:3.2.1"))
-    implementation(platform("org.apache.camel.springboot:camel-spring-boot-bom:4.4.0-SNAPSHOT"))
+    implementation(platform("org.apache.camel.springboot:camel-spring-boot-bom:4.4.1"))
 
     implementation("org.apache.camel.springboot:camel-aws2-kinesis-starter")
     implementation("org.apache.camel.springboot:camel-file-starter")
