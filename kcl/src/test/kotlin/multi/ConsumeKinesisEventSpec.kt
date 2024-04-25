@@ -1,20 +1,24 @@
-package kcl
+package multi
 
 import io.kotest.assertions.nondeterministic.eventually
 import io.kotest.matchers.collections.shouldContain
 import kotlin.time.Duration.Companion.seconds
 
-class ConsumeKinesisEventSpec : KclTestBase({
+class ConsumeKinesisEventSpec : MultiTestBase({
     "can consume kinesis events" {
-        withKinesisStream {
-            sendEvent("First")
-            withKinesisConsumer {
-                sendEvent("Second")
+        withKinesisStreams { (scopeA, scopeB) ->
+            withKinesisConsumer(listOf(scopeA.streamName, scopeB.streamName)) {
+                scopeA.sendEvent("First")
+                scopeB.sendEvent("Second")
+
+                logger.info { "sent events" }
 
                 eventually(60.seconds) {
                     eventsReceived shouldContain "First"
                     eventsReceived shouldContain "Second"
                 }
+
+                logger.info { "test complete!" }
             }
         }
     }

@@ -4,7 +4,7 @@ import io.kotest.assertions.nondeterministic.eventually
 import io.kotest.matchers.collections.shouldContainAll
 import kotlin.time.Duration.Companion.seconds
 
-class CanConsumeEventsSpec : KinesisConsumerBase({
+class CanConsumeEventsSpec : Kcl2TestBase({
 
     "can consume events" {
         withKinesisStream {

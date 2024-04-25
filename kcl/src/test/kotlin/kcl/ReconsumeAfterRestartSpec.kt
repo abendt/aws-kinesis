@@ -7,7 +7,7 @@ import io.kotest.matchers.collections.shouldNotContain
 import io.kotest.matchers.equals.shouldBeEqual
 import kotlin.time.Duration.Companion.seconds
 
-class ReconsumeAfterRestartSpec : KinesisConsumerBase({
+class ReconsumeAfterRestartSpec : KclTestBase({
     "not committed is re-delivered after restart" {
         withKinesisStream {
             withKinesisConsumer(shouldFailPermanently = true) {

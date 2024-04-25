@@ -40,6 +40,6 @@ mockk-core = { module = "io.mockk:mockk", version.ref = "mockk" }
 
 [bundles]
 
-kotest = ["kotest-runner", "kotest-assertions", "kotest-datatest", "kotest-json"]
+kotest = ["kotest-runner", "kotest-assertions", "kotest-datatest", "kotest-json", "kotest-property"]
 logback = ["logback-classic", "logback-core"]
 slf4j = ["slf4j-jul", "slf4j-jcl", "slf4j-api"]

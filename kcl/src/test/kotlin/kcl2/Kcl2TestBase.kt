@@ -1,57 +1,15 @@
-package kcl
+package kcl2
 
-import config.configureForLocalstack
-import io.kotest.core.extensions.install
-import io.kotest.core.spec.style.StringSpec
-import io.kotest.extensions.testcontainers.ContainerExtension
+import config.KinesisTestBase
 import java.nio.ByteBuffer
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
-import java.util.concurrent.atomic.AtomicInteger
-import mu.KotlinLogging
-import org.testcontainers.containers.localstack.LocalStackContainer
-import org.testcontainers.utility.DockerImageName
 import software.amazon.awssdk.core.SdkBytes
-import software.amazon.awssdk.services.cloudwatch.CloudWatchAsyncClient
-import software.amazon.awssdk.services.dynamodb.DynamoDbAsyncClient
-import software.amazon.awssdk.services.kinesis.KinesisAsyncClient
-import software.amazon.awssdk.services.kinesis.KinesisClient
-import utils.KinesisFixture
 import utils.KinesisStreamTestScope
 
-abstract class KinesisConsumerBase(block: KinesisConsumerBase.() -> Unit) : StringSpec() {
-    val logger = KotlinLogging.logger {}
-
-    val localstack =
-        install(ContainerExtension(LocalStackContainer(DockerImageName.parse("localstack/localstack")))) {
-        }
-
-    val kinesisClient =
-        KinesisAsyncClient.builder()
-            .configureForLocalstack(localstack)
-            .build()
-
-    val dynamoClient =
-        DynamoDbAsyncClient.builder()
-            .configureForLocalstack(localstack)
-            .build()
-
-    val cloudWatchClient =
-        CloudWatchAsyncClient.builder()
-            .configureForLocalstack(localstack)
-            .build()
-
+abstract class Kcl2TestBase(block: Kcl2TestBase.() -> Unit) : KinesisTestBase() {
     init {
         block()
-    }
-
-    val kinesisFixture = KinesisFixture(KinesisClient.builder().configureForLocalstack(localstack).build())
-
-    suspend fun withKinesisStream(
-        withShards: Int = 1,
-        block: suspend KinesisStreamTestScope.() -> Unit,
-    ) {
-        kinesisFixture.withKinesisStream(withShards = withShards, block = block)
     }
 
     interface KinesisConsumerTestScope {
@@ -62,17 +20,17 @@ abstract class KinesisConsumerBase(block: KinesisConsumerBase.() -> Unit) : Stri
     suspend fun KinesisStreamTestScope.withKinesisConsumer(
         shouldFailPermanently: Boolean = false,
         shouldFailPermanentlyOn: Set<String> = emptySet(),
-        shouldFailTemporaryOn: Map<String, Int> = emptyMap(),
+        // shouldFailTemporaryOn: Map<String, Int> = emptyMap(),
         block: suspend KinesisConsumerTestScope.() -> Unit,
     ) {
         var processRecordsCount = 0
 
         val eventsReceived = mutableListOf<String>()
         val processorsReady = CountDownLatch(shardCount)
-        val tempFails = shouldFailTemporaryOn.mapValues { AtomicInteger(it.value) }
+        // val tempFails = shouldFailTemporaryOn.mapValues { AtomicInteger(it.value) }
 
         val config =
-            object : KinesisConsumerConfiguration<String> {
+            object : ConsumerConfiguration<String> {
                 override fun processorInitialized() {
                     logger.info { "processor started" }
                     processorsReady.countDown()
@@ -82,7 +40,7 @@ abstract class KinesisConsumerBase(block: KinesisConsumerBase.() -> Unit) : Stri
                     return SdkBytes.fromByteBuffer(buffer).asUtf8String()
                 }
 
-                override fun processPayload(payload: String) {
+                override fun processPayload(payload: List<Pair<String, String>>) {
                     try {
                         logger.info { "got $payload" }
 
@@ -90,18 +48,11 @@ abstract class KinesisConsumerBase(block: KinesisConsumerBase.() -> Unit) : Stri
                             throw RuntimeException("fail always")
                         }
 
-                        if (shouldFailPermanentlyOn.contains(payload)) {
+                        if (payload.any { shouldFailPermanentlyOn.contains(it.second) }) {
                             throw RuntimeException("fail on $payload")
                         }
 
-                        tempFails[payload]?.let {
-                            val count = it.getAndDecrement()
-                            if (count > 0) {
-                                throw RuntimeException("fail #$count")
-                            }
-                        }
-
-                        eventsReceived.add(payload)
+                        eventsReceived.addAll(payload.map { it.second })
 
                         logger.info { "processed $payload" }
                     } finally {

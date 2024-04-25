@@ -12,7 +12,8 @@
 
     <logger name="kcl" level="DEBUG" />
     <logger name="kcl2" level="DEBUG" />
-    <logger name="software.amazon.kinesis" level="INFO" />
+    <logger name="multi" level="DEBUG" />
+    <logger name="software.amazon.kinesis" level="WARN" />
 
     <root level="WARN">
         <appender-ref ref="STDOUT"/>

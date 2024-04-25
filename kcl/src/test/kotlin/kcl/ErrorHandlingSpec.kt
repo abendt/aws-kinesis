@@ -6,8 +6,8 @@ import io.kotest.matchers.collections.shouldNotContain
 import io.kotest.matchers.shouldBe
 import kotlin.time.Duration.Companion.seconds
 
-class ErrorHandlingSpec : KinesisConsumerBase({
-    "erroneous events are not retried" {
+class ErrorHandlingSpec : KclTestBase({
+    "failing events are not retried" {
         withKinesisStream {
             withKinesisConsumer(shouldFailPermanentlyOn = setOf("First")) {
                 sendEvent("First")

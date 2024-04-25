@@ -4,7 +4,7 @@ import io.kotest.assertions.nondeterministic.eventually
 import io.kotest.matchers.collections.shouldHaveSize
 import kotlin.time.Duration.Companion.seconds
 
-class ConsumeMultipleShardsSpec : KinesisConsumerBase({
+class ConsumeMultipleShardsSpec : KclTestBase({
     "can consume from multiple shards" {
         withKinesisStream(withShards = 2) {
             withKinesisConsumer {

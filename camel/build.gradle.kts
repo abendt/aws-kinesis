@@ -37,12 +37,6 @@ configurations {
     }
 }
 
-repositories {
-    maven {
-        url = uri("https://repository.apache.org/content/repositories/snapshots")
-    }
-}
-
 tasks.withType<KotlinCompile>().configureEach {
     kotlinOptions {
         freeCompilerArgs += "-Xcontext-receivers"
