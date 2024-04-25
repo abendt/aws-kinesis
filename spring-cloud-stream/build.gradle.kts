@@ -1,8 +1,8 @@
 plugins {
     id("module-conventions")
 
-    id("org.springframework.boot") version("3.2.1")
-    id("org.jetbrains.kotlin.plugin.spring") version "1.9.22"
+    id("org.springframework.boot") version ("3.2.5")
+    id("org.jetbrains.kotlin.plugin.spring") version "1.9.23"
 
     id("jvm-test-suite")
 }
@@ -10,13 +10,13 @@ plugins {
 apply(plugin = "io.spring.dependency-management")
 
 dependencies {
-    implementation(platform("org.springframework.boot:spring-boot-dependencies:3.2.1"))
-    implementation(platform("org.springframework.cloud:spring-cloud-stream-dependencies:4.0.2"))
-    implementation(platform("software.amazon.awssdk:bom:2.23.6"))
+    implementation(platform("org.springframework.boot:spring-boot-dependencies:3.2.5"))
+    implementation(platform("org.springframework.cloud:spring-cloud-stream-dependencies:4.1.1"))
+    implementation(platform("software.amazon.awssdk:bom:2.25.38"))
 
     implementation("org.springframework.boot:spring-boot-starter-web")
     implementation("org.springframework.boot:spring-boot-starter-actuator")
-    implementation("org.springframework.cloud:spring-cloud-stream-binder-kinesis:4.0.2")
+    implementation("org.springframework.cloud:spring-cloud-stream-binder-kinesis:4.0.3")
 }
 
 configurations {
@@ -44,7 +44,7 @@ testing {
 
                 implementation.bundle(libs.bundles.kotest)
 
-                implementation(platform("org.testcontainers:testcontainers-bom:1.19.4"))
+                implementation(platform("org.testcontainers:testcontainers-bom:1.19.7"))
                 implementation("org.testcontainers:localstack")
                 implementation("io.kotest.extensions:kotest-extensions-testcontainers:2.0.2")
                 implementation(project(":testcontainers-junit4-shim"))
