@@ -8,7 +8,7 @@ import org.springframework.beans.factory.annotation.Value
 import software.amazon.awssdk.services.kinesis.KinesisClient
 
 class KinesisClusteredRouteBuilder(
-    val root: String,
+    val fileLockDirectory: String,
     @Value("\${stream-name:my-stream}") val streamName: String,
     val kinesisClient: KinesisClient,
     val myService: MyService,
@@ -19,8 +19,10 @@ class KinesisClusteredRouteBuilder(
         logger.info { "configure KinesisClusteredRoute" }
         context.registry.bind("amazonKinesisClient", kinesisClient)
 
-        val lockClusterService = FileLockClusterService()
-        lockClusterService.root = root
+        val lockClusterService =
+            FileLockClusterService().apply {
+                root = fileLockDirectory
+            }
         context.addService(lockClusterService)
 
         from("master:my-ns:aws2-kinesis://$streamName?amazonKinesisClient=#amazonKinesisClient")
