@@ -20,7 +20,7 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-web")
     testImplementation("org.springframework.boot:spring-boot-starter-test")
 
-    testImplementation(platform("org.testcontainers:testcontainers-bom:1.19.7"))
+    testImplementation(platform("org.testcontainers:testcontainers-bom:1.19.8"))
     testImplementation("org.testcontainers:localstack")
     testImplementation("io.kotest.extensions:kotest-extensions-testcontainers:2.0.2")
     testImplementation(project(":testcontainers-junit4-shim"))
