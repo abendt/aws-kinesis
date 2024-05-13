@@ -4,6 +4,6 @@ plugins {
 }
 
 dependencies {
-    api("software.amazon.kinesis:amazon-kinesis-client:2.5.8")
+    api("software.amazon.kinesis:amazon-kinesis-client:2.6.0")
     implementation("org.awaitility:awaitility-kotlin:4.2.1")
 }
