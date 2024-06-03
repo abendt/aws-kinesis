@@ -58,7 +58,7 @@ testing {
 
             dependencies {
                 implementation("org.springframework.boot:spring-boot-starter-test")
-                implementation("io.kotest.extensions:kotest-extensions-spring:1.1.3")
+                implementation("io.kotest.extensions:kotest-extensions-spring:1.3.0")
                 implementation("com.ninja-squad:springmockk:4.0.2")
             }
         }
