@@ -1,7 +1,7 @@
 plugins {
     id("module-conventions")
 
-    id("org.springframework.boot") version ("3.2.5")
+    id("org.springframework.boot") version ("3.3.0")
     id("org.jetbrains.kotlin.plugin.spring") version "2.0.0"
 
     id("jvm-test-suite")
@@ -12,7 +12,7 @@ apply(plugin = "io.spring.dependency-management")
 dependencies {
     implementation(platform("org.springframework.boot:spring-boot-dependencies:3.3.0"))
     implementation(platform("org.springframework.cloud:spring-cloud-stream-dependencies:4.1.2"))
-    implementation(platform("software.amazon.awssdk:bom:2.25.64"))
+    implementation(platform("software.amazon.awssdk:bom:2.25.65"))
 
     implementation("org.springframework.boot:spring-boot-starter-web")
     implementation("org.springframework.boot:spring-boot-starter-actuator")

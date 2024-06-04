@@ -1,4 +1,5 @@
 import org.gradle.accessors.dm.LibrariesForLibs
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
@@ -10,14 +11,11 @@ repositories {
 }
 
 val libs = the<LibrariesForLibs>()
-val javaVersion = libs.versions.java.get()
-
-java {
-    targetCompatibility = JavaVersion.valueOf("VERSION_$javaVersion")
-}
 
 kotlin {
-    jvmToolchain(javaVersion.toInt())
+    jvmToolchain {
+        languageVersion.set(JavaLanguageVersion.of(libs.versions.java.get()))
+    }
 }
 
 dependencies {
@@ -34,8 +32,16 @@ dependencies {
 
 val isIdea = providers.systemProperty("idea.version").isPresent
 
+private fun toJvmTarget(string: String): JvmTarget =
+    when (string) {
+        "17" -> JvmTarget.JVM_17
+        "21" -> JvmTarget.JVM_21
+        "22" -> JvmTarget.JVM_22
+        else -> throw IllegalArgumentException("not configured")
+    }
+
 tasks.withType(KotlinCompile::class.java).configureEach {
-    kotlinOptions {
+    compilerOptions {
         // don't fail the build when running tests in idea!
         allWarningsAsErrors = !isIdea
 
@@ -43,7 +49,14 @@ tasks.withType(KotlinCompile::class.java).configureEach {
         freeCompilerArgs = listOf("-Xjsr305=strict")
 
         if (isIdea) {
-            freeCompilerArgs += "-Xdebug"
+            freeCompilerArgs.add("-Xdebug")
         }
+
+        jvmTarget.set(toJvmTarget(libs.versions.java.get()))
     }
+}
+
+tasks.withType<JavaCompile> {
+    sourceCompatibility = libs.versions.java.get()
+    targetCompatibility = libs.versions.java.get()
 }
