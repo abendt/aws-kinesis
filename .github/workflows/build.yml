@@ -44,14 +44,6 @@ jobs:
           files: |
             **/build/test-results/**/TEST-*.xml
 
-      - name: Test Report
-        uses: dorny/test-reporter@v1
-        if: success() || failure()    # run this step even if previous step failed
-        with:
-          name: Test reports
-          path: '**/build/test-results/**/TEST-*.xml'
-          reporter: java-junit
-
   auto-merge-dependabot:
     name: 🤖 Auto merge dependabot PR
     timeout-minutes: 10
