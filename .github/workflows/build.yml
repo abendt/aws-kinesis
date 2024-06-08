@@ -12,8 +12,9 @@ concurrency:
 
 permissions:
   contents: read
-  actions: read
+  issues: read
   checks: write
+  pull-requests: write
 
 jobs:
   gradle-build:
@@ -35,6 +36,13 @@ jobs:
       - name: Run build with Gradle Wrapper
         run: ./gradlew build
         timeout-minutes: 10
+
+      - name: Test Reports
+        uses: EnricoMi/publish-unit-test-result-action@v2
+        if: always()
+        with:
+          files: |
+            **/build/test-results/**/TEST-*.xml
 
       - name: Test Report
         uses: dorny/test-reporter@v1
