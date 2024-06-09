@@ -30,7 +30,7 @@ testlogger {
     showSkippedStandardStreams = false
     showFailedStandardStreams = true
 
-    showPassed = true
+    showPassed = false
     showSkipped = false
     showFailed = true
 }
