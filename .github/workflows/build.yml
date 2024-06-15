@@ -44,6 +44,20 @@ jobs:
           files: |
             **/build/test-results/**/TEST-*.xml
 
+      - name: Test Summary
+        uses: test-summary/action@v2
+        with:
+          paths: "**/build/test-results/**/TEST-*.xml"
+          output: test-summary.md
+        if: always()
+
+      - name: Upload test summary
+        uses: actions/upload-artifact@v3
+        with:
+          name: test-summary
+          path: test-summary.md
+        if: always()
+
   auto-merge-dependabot:
     name: 🤖 Auto merge dependabot PR
     timeout-minutes: 10
