@@ -5,7 +5,7 @@ plugins {
 dependencies {
     implementation("software.amazon.kinesis:amazon-kinesis-client:2.6.0")
     implementation("io.github.resilience4j:resilience4j-retry:2.2.0")
-    implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.17.1")
+    implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.17.2")
 
     testImplementation(platform("org.testcontainers:testcontainers-bom:1.19.8"))
     testImplementation("org.testcontainers:localstack")
