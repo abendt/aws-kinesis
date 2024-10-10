@@ -3,7 +3,7 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 plugins {
     id("module-conventions")
     id("org.springframework.boot") version ("3.3.4")
-    id("org.jetbrains.kotlin.plugin.spring") version "2.0.20"
+    id("org.jetbrains.kotlin.plugin.spring") version "2.0.21"
 }
 
 apply(plugin = "io.spring.dependency-management")
