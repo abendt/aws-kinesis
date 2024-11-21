@@ -2,14 +2,14 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
     id("module-conventions")
-    id("org.springframework.boot") version ("3.3.5")
+    id("org.springframework.boot") version ("3.3.6")
     id("org.jetbrains.kotlin.plugin.spring") version "2.0.21"
 }
 
 apply(plugin = "io.spring.dependency-management")
 
 dependencies {
-    implementation(platform("org.springframework.boot:spring-boot-dependencies:3.3.5"))
+    implementation(platform("org.springframework.boot:spring-boot-dependencies:3.3.6"))
     implementation(platform("org.apache.camel.springboot:camel-spring-boot-bom:4.8.1"))
 
     implementation("org.apache.camel.springboot:camel-aws2-kinesis-starter")
