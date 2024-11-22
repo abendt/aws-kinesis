@@ -12,7 +12,7 @@ apply(plugin = "io.spring.dependency-management")
 dependencies {
     implementation(platform("org.springframework.boot:spring-boot-dependencies:3.4.0"))
     implementation(platform("org.springframework.cloud:spring-cloud-stream-dependencies:4.1.3"))
-    implementation(platform("software.amazon.awssdk:bom:2.29.19"))
+    implementation(platform("software.amazon.awssdk:bom:2.29.20"))
 
     implementation("org.springframework.boot:spring-boot-starter-web")
     implementation("org.springframework.boot:spring-boot-starter-actuator")
