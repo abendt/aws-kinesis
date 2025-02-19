@@ -7,7 +7,7 @@ dependencies {
     implementation("io.github.resilience4j:resilience4j-retry:2.3.0")
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.18.2")
 
-    testImplementation(platform("org.testcontainers:testcontainers-bom:1.20.4"))
+    testImplementation(platform("org.testcontainers:testcontainers-bom:1.20.5"))
     testImplementation("org.testcontainers:localstack")
     testImplementation("io.kotest.extensions:kotest-extensions-testcontainers:2.0.2")
     testImplementation(project(":testcontainers-junit4-shim"))
