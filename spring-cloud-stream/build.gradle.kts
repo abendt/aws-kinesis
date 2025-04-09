@@ -2,7 +2,7 @@ plugins {
     id("module-conventions")
 
     id("org.springframework.boot") version ("3.4.4")
-    id("org.jetbrains.kotlin.plugin.spring") version "2.1.0"
+    id("org.jetbrains.kotlin.plugin.spring") version "2.1.20"
 
     id("jvm-test-suite")
 }
