@@ -3,7 +3,7 @@ plugins {
 }
 
 dependencies {
-    implementation("software.amazon.kinesis:amazon-kinesis-client:2.7.0")
+    implementation("software.amazon.kinesis:amazon-kinesis-client:3.1.1")
     implementation("io.github.resilience4j:resilience4j-retry:2.3.0")
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.19.0")
 
