@@ -44,6 +44,14 @@ jobs:
           files: |
             **/build/test-results/**/TEST-*.xml
 
+      - name: Test Summary
+        uses: test-summary/action@v2
+        with:
+          paths: "**/build/test-results/**/TEST-*.xml"
+        if: always()
+
+      
+
   auto-merge-dependabot:
     name: 🤖 Auto merge dependabot PR
     timeout-minutes: 10
