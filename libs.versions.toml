@@ -4,7 +4,7 @@ java = "21"
 kotlin = "2.0.0"
 
 slf4j = "2.0.17"
-logback = "1.5.25"
+logback = "1.5.35"
 
 junit = "5.13.3"
 kotest = "5.9.1"
