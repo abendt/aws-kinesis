@@ -6,7 +6,7 @@ import io.github.resilience4j.retry.RetryConfig
 import io.github.resilience4j.retry.RetryRegistry
 import java.time.Duration
 import java.time.Instant
-import mu.KotlinLogging
+import io.github.oshai.kotlinlogging.KotlinLogging
 import software.amazon.kinesis.exceptions.KinesisClientLibRetryableException
 import software.amazon.kinesis.lifecycle.events.ProcessRecordsInput
 import software.amazon.kinesis.processor.RecordProcessorCheckpointer
@@ -20,7 +20,8 @@ class CheckpointStrategyFactory(
     val logger = KotlinLogging.logger {}
 
     private val retryConfig =
-        RetryConfig.custom<Any>()
+        RetryConfig
+            .custom<Any>()
             .maxAttempts(maxRetries)
             .intervalFunction(intervalFunction)
             .retryExceptions(KinesisClientLibRetryableException::class.java)

@@ -2,7 +2,7 @@ package kcl
 
 import java.nio.ByteBuffer
 import java.util.UUID
-import mu.KotlinLogging
+import io.github.oshai.kotlinlogging.KotlinLogging
 import software.amazon.awssdk.services.cloudwatch.CloudWatchAsyncClient
 import software.amazon.awssdk.services.dynamodb.DynamoDbAsyncClient
 import software.amazon.awssdk.services.kinesis.KinesisAsyncClient
@@ -75,7 +75,8 @@ class KinesisConsumer<T>(
             Scheduler(
                 configsBuilder.checkpointConfig(),
                 configsBuilder.coordinatorConfig().workerStateChangeListener(delegatingListener),
-                configsBuilder.leaseManagementConfig()
+                configsBuilder
+                    .leaseManagementConfig()
                     .shardSyncIntervalMillis(2000)
                     .failoverTimeMillis(2000)
                     .listShardsBackoffTimeInMillis(2000),
@@ -83,7 +84,8 @@ class KinesisConsumer<T>(
                 configsBuilder.metricsConfig(),
                 configsBuilder.processorConfig(),
                 configsBuilder
-                    .retrievalConfig().retrievalSpecificConfig(PollingConfig(streamName, kinesisClient))
+                    .retrievalConfig()
+                    .retrievalSpecificConfig(PollingConfig(streamName, kinesisClient))
                     .streamTracker(
                         SingleStreamTracker(
                             streamName,
@@ -112,8 +114,9 @@ class KinesisConsumer<T>(
     }
 }
 
-class MyShardRecordProcessorFactory<T>(val config: KinesisConsumerConfiguration<T>) :
-    ShardRecordProcessorFactory {
+class MyShardRecordProcessorFactory<T>(
+    val config: KinesisConsumerConfiguration<T>,
+) : ShardRecordProcessorFactory {
     val logger = KotlinLogging.logger {}
 
     override fun shardRecordProcessor(): ShardRecordProcessor {
@@ -123,7 +126,9 @@ class MyShardRecordProcessorFactory<T>(val config: KinesisConsumerConfiguration<
     }
 }
 
-class MyShardProcessor<T>(val config: KinesisConsumerConfiguration<T>) : ShardRecordProcessor {
+class MyShardProcessor<T>(
+    val config: KinesisConsumerConfiguration<T>,
+) : ShardRecordProcessor {
     val logger = KotlinLogging.logger {}
     var lastSequenceNumber: String? = null
 
@@ -136,9 +141,12 @@ class MyShardProcessor<T>(val config: KinesisConsumerConfiguration<T>) : ShardRe
     override fun processRecords(processRecords: ProcessRecordsInput) {
         logger.info { "processRecords $processRecords" }
 
-        processRecords.records().asSequence().map {
-            config.convertPayload(it.data())
-        }.forEach { config.processPayload(it) }
+        processRecords
+            .records()
+            .asSequence()
+            .map {
+                config.convertPayload(it.data())
+            }.forEach { config.processPayload(it) }
 
         lastSequenceNumber = processRecords.records().last().sequenceNumber()
 

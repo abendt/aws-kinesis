@@ -3,13 +3,13 @@ plugins {
 }
 
 dependencies {
-    implementation("software.amazon.kinesis:amazon-kinesis-client:2.7.2")
-    implementation("io.github.resilience4j:resilience4j-retry:2.3.0")
-    implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.19.0")
+    implementation("software.amazon.kinesis:amazon-kinesis-client:3.5.4")
+    implementation("io.github.resilience4j:resilience4j-retry:2.4.0")
+    implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.23.0")
 
-    testImplementation(platform("org.testcontainers:testcontainers-bom:1.21.3"))
-    testImplementation("org.testcontainers:localstack")
-    testImplementation("io.kotest.extensions:kotest-extensions-testcontainers:2.0.2")
+    testImplementation(platform("org.testcontainers:testcontainers-bom:2.0.5"))
+    testImplementation("org.testcontainers:testcontainers-localstack")
+    testImplementation(libs.kotest.testcontainers)
     testImplementation(project(":testcontainers-junit4-shim"))
     testImplementation(project(":test-utils"))
 }

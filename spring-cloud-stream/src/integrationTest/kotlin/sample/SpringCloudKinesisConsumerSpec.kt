@@ -1,12 +1,15 @@
 package sample
 
 import com.ninjasquad.springmockk.MockkBean
+import io.kotest.core.extensions.ApplyExtension
+import io.kotest.extensions.spring.SpringExtension
 import io.mockk.verify
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import utils.KinesisFixture
 
 @SpringBootTest
+@ApplyExtension(SpringExtension::class)
 class SpringCloudKinesisConsumerSpec : LocalstackBase() {
     @MockkBean(relaxed = true)
     lateinit var myService: MyService

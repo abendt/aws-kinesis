@@ -1,6 +1,6 @@
 package kinesis
 
-import mu.KotlinLogging
+import io.github.oshai.kotlinlogging.KotlinLogging
 import org.apache.camel.LoggingLevel
 import org.apache.camel.builder.RouteBuilder
 import org.apache.camel.component.aws2.kinesis.consumer.KinesisConsumerOffsetProcessor
@@ -23,9 +23,10 @@ class KinesisResumableRouteBuilder(
 
         from("aws2-kinesis://$streamName?amazonKinesisClient=#amazonKinesisClient")
             // without this resume strategy the consumer will re-consume the whole stream after re-start
-            .resumable().configuration(KinesisResumeStrategyConfiguration.builder().withResumeCache(resumeCache))
+            .resumable()
+            .configuration(KinesisResumeStrategyConfiguration.builder().withResumeCache(resumeCache))
             .process(KinesisConsumerOffsetProcessor())
-            .log(LoggingLevel.INFO, logger, "received '\${body}'")
+            .log(LoggingLevel.INFO, logger.name, "received '\${body}'")
             .bean(myService, "processEvent")
     }
 }

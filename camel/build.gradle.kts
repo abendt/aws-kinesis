@@ -1,16 +1,14 @@
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+import org.springframework.boot.gradle.plugin.SpringBootPlugin
 
 plugins {
     id("module-conventions")
-    id("org.springframework.boot") version ("3.4.5")
-    id("org.jetbrains.kotlin.plugin.spring") version "2.1.0"
+    alias(libs.plugins.spring.boot)
+    alias(libs.plugins.kotlin.spring)
 }
 
-apply(plugin = "io.spring.dependency-management")
-
 dependencies {
-    implementation(platform("org.springframework.boot:spring-boot-dependencies:3.4.5"))
-    implementation(platform("org.apache.camel.springboot:camel-spring-boot-bom:4.10.1"))
+    implementation(platform(SpringBootPlugin.BOM_COORDINATES))
+    implementation(platform("org.apache.camel.springboot:camel-spring-boot-bom:4.23.0"))
 
     implementation("org.apache.camel.springboot:camel-aws2-kinesis-starter")
     implementation("org.apache.camel.springboot:camel-file-starter")
@@ -20,14 +18,14 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-web")
     testImplementation("org.springframework.boot:spring-boot-starter-test")
 
-    testImplementation(platform("org.testcontainers:testcontainers-bom:1.21.3"))
-    testImplementation("org.testcontainers:localstack")
-    testImplementation("io.kotest.extensions:kotest-extensions-testcontainers:2.0.2")
+    testImplementation(platform("org.testcontainers:testcontainers-bom:2.0.5"))
+    testImplementation("org.testcontainers:testcontainers-localstack")
+    testImplementation(libs.kotest.testcontainers)
     testImplementation(project(":testcontainers-junit4-shim"))
     testImplementation(project(":test-utils"))
 
-    testImplementation("io.kotest.extensions:kotest-extensions-spring:1.3.0")
-    testImplementation("com.ninja-squad:springmockk:4.0.2")
+    testImplementation(libs.kotest.spring)
+    testImplementation("com.ninja-squad:springmockk:5.0.1")
 }
 
 configurations {
@@ -37,13 +35,7 @@ configurations {
     }
 }
 
-tasks.withType<KotlinCompile>().configureEach {
-    compilerOptions {
-        freeCompilerArgs.add("-Xcontext-receivers")
-    }
-}
-
-tasks.getByName("spotlessJavaCheck") {
+tasks.named("spotlessJavaCheck") {
     enabled = false
 }
 

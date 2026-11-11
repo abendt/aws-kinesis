@@ -1,22 +1,22 @@
+import org.springframework.boot.gradle.plugin.SpringBootPlugin
+
 plugins {
     id("module-conventions")
 
-    id("org.springframework.boot") version ("3.4.5")
-    id("org.jetbrains.kotlin.plugin.spring") version "2.1.0"
+    alias(libs.plugins.spring.boot)
+    alias(libs.plugins.kotlin.spring)
 
     id("jvm-test-suite")
 }
 
-apply(plugin = "io.spring.dependency-management")
-
 dependencies {
-    implementation(platform("org.springframework.boot:spring-boot-dependencies:3.4.5"))
-    implementation(platform("org.springframework.cloud:spring-cloud-stream-dependencies:4.2.1"))
-    implementation(platform("software.amazon.awssdk:bom:2.29.39"))
+    implementation(platform(SpringBootPlugin.BOM_COORDINATES))
+    implementation(platform("org.springframework.cloud:spring-cloud-stream-dependencies:5.0.4"))
+    implementation(platform("io.awspring.cloud:spring-cloud-aws-dependencies:4.2.1"))
 
     implementation("org.springframework.boot:spring-boot-starter-web")
     implementation("org.springframework.boot:spring-boot-starter-actuator")
-    implementation("org.springframework.cloud:spring-cloud-stream-binder-kinesis:4.0.4")
+    implementation("io.awspring.cloud:spring-cloud-aws-kinesis-stream-binder")
 }
 
 configurations {
@@ -31,7 +31,7 @@ testing {
     suites {
 
         // test suite uses Test binder
-        val test by getting(JvmTestSuite::class) {
+        named<JvmTestSuite>("test") {
             dependencies {
                 implementation("org.springframework.cloud:spring-cloud-stream-test-binder")
             }
@@ -44,28 +44,31 @@ testing {
 
                 implementation.bundle(libs.bundles.kotest)
 
-                implementation(platform("org.testcontainers:testcontainers-bom:1.21.3"))
-                implementation("org.testcontainers:localstack")
-                implementation("io.kotest.extensions:kotest-extensions-testcontainers:2.0.2")
+                implementation(platform("org.testcontainers:testcontainers-bom:2.0.5"))
+                implementation("org.testcontainers:testcontainers-localstack")
+                implementation(libs.kotest.testcontainers)
                 implementation(project(":testcontainers-junit4-shim"))
                 implementation(project(":test-utils"))
             }
         }
 
         // common suite configuration
-        withType(JvmTestSuite::class).configureEach {
+        withType<JvmTestSuite>().configureEach {
             useJUnitJupiter(libs.versions.junit.get())
 
             dependencies {
+                implementation(platform(SpringBootPlugin.BOM_COORDINATES))
                 implementation("org.springframework.boot:spring-boot-starter-test")
-                implementation("io.kotest.extensions:kotest-extensions-spring:1.3.0")
-                implementation("com.ninja-squad:springmockk:4.0.2")
+                implementation(libs.kotest.spring)
+                implementation("com.ninja-squad:springmockk:5.0.1")
             }
         }
     }
 }
 
-tasks.getByName("check").dependsOn("integrationTest")
+tasks.named("check") {
+    dependsOn("integrationTest")
+}
 
 tasks.named<Test>("integrationTest") {
     maxParallelForks = 2

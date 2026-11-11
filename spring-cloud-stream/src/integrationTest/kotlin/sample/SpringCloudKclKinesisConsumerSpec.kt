@@ -1,6 +1,8 @@
 package sample
 
 import com.ninjasquad.springmockk.MockkBean
+import io.kotest.core.extensions.ApplyExtension
+import io.kotest.extensions.spring.SpringExtension
 import io.mockk.verify
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
@@ -9,6 +11,7 @@ import utils.KinesisFixture
 
 @SpringBootTest
 @TestPropertySource(properties = ["spring.cloud.stream.kinesis.binder.kpl-kcl-enabled=true"])
+@ApplyExtension(SpringExtension::class)
 class SpringCloudKclKinesisConsumerSpec : LocalstackBase() {
     @MockkBean(relaxed = true)
     lateinit var myService: MyService

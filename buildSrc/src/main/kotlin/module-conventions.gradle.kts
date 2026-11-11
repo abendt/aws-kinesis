@@ -58,6 +58,6 @@ configure<com.diffplug.gradle.spotless.SpotlessExtension> {
         ktlint()
     }
     java {
-        googleJavaFormat("1.22.0").aosp()
+        googleJavaFormat().aosp()
     }
 }

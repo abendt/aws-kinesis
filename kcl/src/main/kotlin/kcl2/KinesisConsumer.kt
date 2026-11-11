@@ -2,7 +2,7 @@ package kcl2
 
 import java.nio.ByteBuffer
 import java.util.UUID
-import mu.KotlinLogging
+import io.github.oshai.kotlinlogging.KotlinLogging
 import software.amazon.awssdk.services.cloudwatch.CloudWatchAsyncClient
 import software.amazon.awssdk.services.dynamodb.DynamoDbAsyncClient
 import software.amazon.awssdk.services.kinesis.KinesisAsyncClient
@@ -89,7 +89,8 @@ class KinesisConsumer<T>(
             Scheduler(
                 configsBuilder.checkpointConfig(),
                 configsBuilder.coordinatorConfig().workerStateChangeListener(LoggingWorkerStateChangeListener()),
-                configsBuilder.leaseManagementConfig()
+                configsBuilder
+                    .leaseManagementConfig()
                     .shardSyncIntervalMillis(2000)
                     .failoverTimeMillis(2000)
                     .listShardsBackoffTimeInMillis(2000),
@@ -97,7 +98,8 @@ class KinesisConsumer<T>(
                 configsBuilder.metricsConfig(),
                 configsBuilder.processorConfig(),
                 configsBuilder
-                    .retrievalConfig().retrievalSpecificConfig(PollingConfig(streamName, kinesisClient))
+                    .retrievalConfig()
+                    .retrievalSpecificConfig(PollingConfig(streamName, kinesisClient))
                     .streamTracker(
                         SingleStreamTracker(
                             streamName,

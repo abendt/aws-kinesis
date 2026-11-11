@@ -1,6 +1,6 @@
 package kinesis
 
-import mu.KotlinLogging
+import io.github.oshai.kotlinlogging.KotlinLogging
 import org.apache.camel.LoggingLevel
 import org.apache.camel.builder.RouteBuilder
 import org.springframework.beans.factory.annotation.Value
@@ -18,7 +18,7 @@ class KinesisBasicRouteBuilder(
         context.registry.bind("amazonKinesisClient", kinesisClient)
 
         from("aws2-kinesis://$streamName?amazonKinesisClient=#amazonKinesisClient")
-            .log(LoggingLevel.INFO, logger, "received '\${body}'")
+            .log(LoggingLevel.INFO, logger.name, "received '\${body}'")
             .bean(myService, "processEvent")
     }
 }

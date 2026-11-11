@@ -4,7 +4,7 @@ import java.nio.ByteBuffer
 import java.time.Duration
 import java.time.temporal.ChronoUnit
 import java.util.UUID
-import mu.KotlinLogging
+import io.github.oshai.kotlinlogging.KotlinLogging
 import software.amazon.awssdk.arns.Arn
 import software.amazon.awssdk.services.cloudwatch.CloudWatchAsyncClient
 import software.amazon.awssdk.services.dynamodb.DynamoDbAsyncClient
@@ -56,31 +56,29 @@ class KinesisConsumer<T>(
         val workerIdentifier = UUID.randomUUID().toString()
 
         val streamConfigs =
-            streamName.map {
-                kinesisClient.describeStream(DescribeStreamRequest.builder().streamName(it).build())
-            }.map {
-                val response = it.get()
+            streamName
+                .map {
+                    kinesisClient.describeStream(DescribeStreamRequest.builder().streamName(it).build())
+                }.map {
+                    val response = it.get()
 
-                StreamConfig(
-                    StreamIdentifier.multiStreamInstance(
-                        Arn.fromString(response.streamDescription().streamARN()),
-                        response.streamDescription().streamCreationTimestamp().epochSecond,
-                    ),
-                    InitialPositionInStreamExtended.newInitialPosition(InitialPositionInStream.TRIM_HORIZON),
-                )
-            }
+                    StreamConfig(
+                        StreamIdentifier.multiStreamInstance(
+                            Arn.fromString(response.streamDescription().streamARN()),
+                            response.streamDescription().streamCreationTimestamp().epochSecond,
+                        ),
+                        InitialPositionInStreamExtended.newInitialPosition(InitialPositionInStream.TRIM_HORIZON),
+                    )
+                }
 
         val tracker: MultiStreamTracker =
             object : MultiStreamTracker {
                 override fun streamConfigList(): List<StreamConfig> = streamConfigs
 
-                override fun formerStreamsLeasesDeletionStrategy(): FormerStreamsLeasesDeletionStrategy {
-                    return object : FormerStreamsLeasesDeletionStrategy.AutoDetectionAndDeferredDeletionStrategy() {
-                        override fun waitPeriodToDeleteFormerStreams(): Duration {
-                            return Duration.of(30, ChronoUnit.MINUTES)
-                        }
+                override fun formerStreamsLeasesDeletionStrategy(): FormerStreamsLeasesDeletionStrategy =
+                    object : FormerStreamsLeasesDeletionStrategy.AutoDetectionAndDeferredDeletionStrategy() {
+                        override fun waitPeriodToDeleteFormerStreams(): Duration = Duration.of(30, ChronoUnit.MINUTES)
                     }
-                }
             }
 
         val configsBuilder =
@@ -110,7 +108,8 @@ class KinesisConsumer<T>(
             Scheduler(
                 configsBuilder.checkpointConfig(),
                 configsBuilder.coordinatorConfig().workerStateChangeListener(delegatingListener),
-                configsBuilder.leaseManagementConfig()
+                configsBuilder
+                    .leaseManagementConfig()
                     .shardSyncIntervalMillis(2000)
                     .failoverTimeMillis(2000)
                     .listShardsBackoffTimeInMillis(2000),
@@ -118,7 +117,8 @@ class KinesisConsumer<T>(
                 configsBuilder.metricsConfig(),
                 configsBuilder.processorConfig(),
                 configsBuilder
-                    .retrievalConfig().retrievalSpecificConfig(PollingConfig(kinesisClient)),
+                    .retrievalConfig()
+                    .retrievalSpecificConfig(PollingConfig(kinesisClient)),
             )
 
         logger.info { "starting scheduler" }
@@ -141,8 +141,9 @@ class KinesisConsumer<T>(
     }
 }
 
-class MyShardRecordProcessorFactory<T>(val config: KinesisConsumerConfiguration<T>) :
-    ShardRecordProcessorFactory {
+class MyShardRecordProcessorFactory<T>(
+    val config: KinesisConsumerConfiguration<T>,
+) : ShardRecordProcessorFactory {
     val logger = KotlinLogging.logger {}
 
     override fun shardRecordProcessor(): ShardRecordProcessor {
@@ -152,7 +153,9 @@ class MyShardRecordProcessorFactory<T>(val config: KinesisConsumerConfiguration<
     }
 }
 
-class MyShardProcessor<T>(val config: KinesisConsumerConfiguration<T>) : ShardRecordProcessor {
+class MyShardProcessor<T>(
+    val config: KinesisConsumerConfiguration<T>,
+) : ShardRecordProcessor {
     val logger = KotlinLogging.logger {}
     var lastSequenceNumber: String? = null
 
@@ -165,9 +168,12 @@ class MyShardProcessor<T>(val config: KinesisConsumerConfiguration<T>) : ShardRe
     override fun processRecords(processRecords: ProcessRecordsInput) {
         logger.info { "processRecords $processRecords" }
 
-        processRecords.records().asSequence().map {
-            config.convertPayload(it.data())
-        }.forEach { config.processPayload(it) }
+        processRecords
+            .records()
+            .asSequence()
+            .map {
+                config.convertPayload(it.data())
+            }.forEach { config.processPayload(it) }
 
         lastSequenceNumber = processRecords.records().last().sequenceNumber()
 

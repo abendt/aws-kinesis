@@ -1,6 +1,6 @@
 package kinesis
 
-import mu.KotlinLogging
+import io.github.oshai.kotlinlogging.KotlinLogging
 import org.apache.camel.LoggingLevel
 import org.apache.camel.builder.RouteBuilder
 import org.apache.camel.component.file.cluster.FileLockClusterService
@@ -27,7 +27,7 @@ class KinesisClusteredRouteBuilder(
 
         from("master:my-ns:aws2-kinesis://$streamName?amazonKinesisClient=#amazonKinesisClient")
             // from("aws2-kinesis://$streamName?amazonKinesisClient=#amazonKinesisClient")
-            .log(LoggingLevel.INFO, logger, "received '\${body}'")
+            .log(LoggingLevel.INFO, logger.name, "received '\${body}'")
             .bean(myService, "processEvent")
     }
 }

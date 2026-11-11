@@ -1,6 +1,7 @@
 package sample
 
 import com.ninjasquad.springmockk.MockkBean
+import io.kotest.core.extensions.ApplyExtension
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.extensions.spring.SpringExtension
 import io.mockk.verify
@@ -20,9 +21,8 @@ import software.amazon.awssdk.regions.providers.AwsRegionProvider
 
 @SpringBootTest
 @Import(TestChannelBinderConfiguration::class)
+@ApplyExtension(SpringExtension::class)
 class KinesisConsumerSpec : StringSpec() {
-    override fun extensions() = listOf(SpringExtension)
-
     @Autowired
     lateinit var input: InputDestination
 

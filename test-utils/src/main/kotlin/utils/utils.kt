@@ -2,7 +2,7 @@ package utils
 
 import java.util.UUID
 import java.util.concurrent.TimeUnit
-import mu.KotlinLogging
+import io.github.oshai.kotlinlogging.KotlinLogging
 import org.awaitility.kotlin.await
 import software.amazon.awssdk.core.SdkBytes
 import software.amazon.awssdk.services.kinesis.KinesisClient
@@ -14,6 +14,9 @@ import software.amazon.awssdk.services.kinesis.model.PutRecordsRequest
 import software.amazon.awssdk.services.kinesis.model.PutRecordsRequestEntry
 import software.amazon.awssdk.services.kinesis.model.ResourceInUseException
 import software.amazon.awssdk.services.kinesis.model.StreamStatus
+
+// last Community image; later versions need a LOCALSTACK_AUTH_TOKEN
+const val LOCALSTACK_IMAGE = "localstack/localstack:4.14.0"
 
 interface KinesisStreamTestScope {
     val streamName: String
@@ -30,7 +33,9 @@ interface KinesisStreamTestScope {
     )
 }
 
-class KinesisFixture(val kinesisClient: KinesisClient) {
+class KinesisFixture(
+    val kinesisClient: KinesisClient,
+) {
     val logger = KotlinLogging.logger {}
 
     suspend fun withKinesisStream(
@@ -57,10 +62,12 @@ class KinesisFixture(val kinesisClient: KinesisClient) {
                     ) {
                         val result =
                             kinesisClient.putRecord(
-                                PutRecordRequest.builder()
+                                PutRecordRequest
+                                    .builder()
                                     .streamName(name)
                                     .partitionKey(partitionKey)
-                                    .data(SdkBytes.fromUtf8String(payload)).build(),
+                                    .data(SdkBytes.fromUtf8String(payload))
+                                    .build(),
                             )
 
                         logger.info { "sent event $payload ${result.sequenceNumber()}" }
@@ -71,11 +78,18 @@ class KinesisFixture(val kinesisClient: KinesisClient) {
                         partitionKey: String,
                     ) {
                         kinesisClient.putRecords(
-                            PutRecordsRequest.builder().streamName(name).records(
-                                payload.map {
-                                    PutRecordsRequestEntry.builder().partitionKey(partitionKey).data(SdkBytes.fromUtf8String(it)).build()
-                                },
-                            ).build(),
+                            PutRecordsRequest
+                                .builder()
+                                .streamName(name)
+                                .records(
+                                    payload.map {
+                                        PutRecordsRequestEntry
+                                            .builder()
+                                            .partitionKey(partitionKey)
+                                            .data(SdkBytes.fromUtf8String(it))
+                                            .build()
+                                    },
+                                ).build(),
                         )
 
                         logger.info { "sent events $payload" }
@@ -83,7 +97,13 @@ class KinesisFixture(val kinesisClient: KinesisClient) {
                 },
             )
         } finally {
-            kinesisClient.deleteStream(DeleteStreamRequest.builder().enforceConsumerDeletion(true).streamName(name).build())
+            kinesisClient.deleteStream(
+                DeleteStreamRequest
+                    .builder()
+                    .enforceConsumerDeletion(true)
+                    .streamName(name)
+                    .build(),
+            )
         }
     }
 
@@ -92,7 +112,13 @@ class KinesisFixture(val kinesisClient: KinesisClient) {
         withShardCount: Int = 1,
     ) {
         logger.info { "creating stream $name" }
-        kinesisClient.createStream(CreateStreamRequest.builder().shardCount(withShardCount).streamName(name).build())
+        kinesisClient.createStream(
+            CreateStreamRequest
+                .builder()
+                .shardCount(withShardCount)
+                .streamName(name)
+                .build(),
+        )
 
         await.atMost(10, TimeUnit.SECONDS).until {
             val response = kinesisClient.describeStream(DescribeStreamRequest.builder().streamName(name).build())
