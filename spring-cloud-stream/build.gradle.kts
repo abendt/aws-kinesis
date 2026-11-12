@@ -12,7 +12,7 @@ plugins {
 dependencies {
     implementation(platform(SpringBootPlugin.BOM_COORDINATES))
     implementation(platform("org.springframework.cloud:spring-cloud-stream-dependencies:5.0.4"))
-    implementation(platform("io.awspring.cloud:spring-cloud-aws-dependencies:4.2.1"))
+    implementation(platform("io.awspring.cloud:spring-cloud-aws-dependencies:4.2.2"))
 
     implementation("org.springframework.boot:spring-boot-starter-web")
     implementation("org.springframework.boot:spring-boot-starter-actuator")
